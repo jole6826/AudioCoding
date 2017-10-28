@@ -66,7 +66,7 @@ reArray = pl.doFFT(cutSoundData, samplerate)
 ###########################################
 # 1.3 quantization
 
-pl.encrframewk(name, bitsPerSample)
+#pl.encrframewk(name, bitsPerSample)
 
 
 
