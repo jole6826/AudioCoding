@@ -37,7 +37,7 @@ def encframewk(fileName,channels,outName):
 	stream.stop_stream()
 	stream.close()
 	p.terminate()
-	return
+	return fragment
 
 def decframewk(inFile,outFile,RATE):
 	""" Function thats read a .bin file and saves it back as a .wav file"""
@@ -45,6 +45,7 @@ def decframewk(inFile,outFile,RATE):
 	pkl_file = open(inFile, 'rb')
 	data = pickle.load(pkl_file)
 	wav.write(outFile,RATE,data)
+	return data
 
 def encframewk8bit(fileName,channels,outName):
 	RATE, wavData = wav.read(fileName)	
@@ -69,7 +70,7 @@ def encframewk8bit(fileName,channels,outName):
 	fragment = fragment.astype(dtype=np.int8)
 	#save data as binary file	
 	pickle.dump(fragment, open(outName, "wb"), 1)
-	return
+	return fragment
 
 def decframewk8bit(inFile,outFile,RATE):
 	""" Function thats read a .bin file and saves it back as a .wav file"""
@@ -92,10 +93,10 @@ outName = 'decoded.wav'
 outName8bit = 'dacoded8bit.wav'
 
 #encframewk(wavName,CH,binName)
-#decframewk(binName,outName,RATE)
+frag16bit = decframewk(binName,outName,RATE)
 
 #encframewk8bit(wavName,CH,binName8bit)
-decframewk8bit(binName8bit,outName8bit,RATE)
+frag8bit = decframewk8bit(binName8bit,outName8bit,RATE)
 
 
 
