@@ -78,7 +78,7 @@ for i in range(0,4):
 	fftChunk = np.fft.fft(chunk)
 	magnitudeFFTChunk = np.absolute(fftChunk)
 	# plot magnitudes (abs) of each fft on top of each other
-	#plt.plot(magnitudeFFTChunk)
+	#plt.plot(f,magnitudeFFTChunk)
 	#print(i+1,magnitudeFFTChunk[0:19])
 
 #plt.show()
