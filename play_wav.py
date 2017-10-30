@@ -19,7 +19,7 @@ def playFile(audio, samplingRate, channels):
     # play. May repeat with different volume values (if done interactively)
 
 
-    sound = (audio.astype(numpy.int16).tostring())
+    sound = (audio.astype(np.int16).tostring())
     stream.write(sound)
 
     # close stream and terminate audio object
@@ -54,19 +54,15 @@ def doFFT(data, samplerate):
 	for i in range(0, 4):
 		chimp = data[i*chunk:(i+1)*chunk]
 		# get just the one sided real part of the fft
-		re = (np.abs(np.fft.rfft(chimp)))		
-		re = np.fft.rfft(chimp)
-		# re = 20*np.log10(np.abs(np.fft.rfft(chunkCh)))
+		re = np.abs(np.fft.rfft(chimp))	
+		# re = np.fft.rfft(chimp)		
 		f = np.linspace(0, samplerate/2, len(re))
+		
 		plt.plot(f, re)
 	
 	plt.show()
 	return
 	
-# def encrframewk(name, BitsPerSample):    
-
-	# Wave_write.setsampwidth(2) #16bit
-
 
 
 
