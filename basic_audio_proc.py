@@ -1,5 +1,6 @@
 import scipy.io.wavfile as wv
 import numpy as np
+import pyaudio
 
 def normalize(audio):
     # normalizes single channel audio data with maximum value that can be stored in the datatype
@@ -68,3 +69,46 @@ def read_segment(filename, duration, channel):
 
 def write_wav(filename, rate, data):
     wv.write(filename, rate, data)
+
+def sound(s, FS,bitdepth):
+	"This function plays out a vector s as a sound at sampling rate FS, like on Octave or Matlab, with: import soundfloat; soundfloat.sound(s,FS)" 
+	
+	CHUNK = 1024 #Blocksize
+	#WIDTH = 2 #2 bytes per sample
+	CHANNELS = 1 #2
+	RATE = FS  #Sampling Rate in Hz
+	p = pyaudio.PyAudio()
+
+	if bitdepth == 8:
+		pyFormat = pyaudio.paInt8
+		dtype = np.int8
+	else:
+		pyFormat = pyaudio.paInt16
+		dtype = np.int16
+
+	stream = p.open(format=pyFormat,
+				channels=CHANNELS,
+                rate=RATE,
+                #input=False,
+                output=True,
+                #input_device_index=10,
+                #frames_per_buffer=CHUNK
+                )
+	stream.write(s.astype(dtype))
+	"""
+	for i in range(0, int(len(s) / CHUNK) ):
+		#print "i=", i
+		#Putting samples into blocks of length CHUNK:
+		samples=s[i*CHUNK:((i+1)*CHUNK)];
+		samples=clip(samples,-1,1)
+		#print samples[1]
+		#print "len(samples)= ", len(samples)
+		#Writing data back to audio output stream: 
+		stream.write(samples.astype(np.float32))
+	"""
+
+	stream.stop_stream()
+	stream.close()
+
+	p.terminate()
+	print("* done")
