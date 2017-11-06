@@ -5,6 +5,7 @@ import os
 
 dumpFiles = True
 
+
 def read_and_quantize(audio_id, length_segment, channel, n_bits):
     # read wav segment
     [norm_audio, raw_audio, org_dtype, fs] = basic_audio_proc.read_segment(audio_id, length_segment, channel)
@@ -33,3 +34,4 @@ def enc_huffman(audio):
             pickle.dump(data_binstring, f, 1)   
     
     return cb, cb_tree, dump_fname
+
