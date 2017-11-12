@@ -136,6 +136,15 @@ def bark2hz(Brk):
     Returns:
         f   : (ndarray)     Array containing frequencies in Hz.
     """
-    
+
     Fhz = 600. * np.sinh(f/6.)
     return Fhz
+
+def mapping2barkmat(fs):
+    #Constructing matrix W which has 1’s for each Bark subband, and 0’s else:
+    nfft=1024; nfilts=48; nfreqs=nfft/2
+    binbarks = hz2bark(np.linspace(0,(nfft/2),(nfft/2)+1)*fs/nfft)
+    W = np.zeros((nfilts, nfft))
+    for i in xrange(nfilts):
+        W[i,0:(nfft/2)+1] = (np.round(binbarks/step_barks)== i)
+    return W
