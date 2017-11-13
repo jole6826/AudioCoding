@@ -80,16 +80,16 @@ def write_wav(filename, rate, data):
     wv.write(filename, rate, data)
 
 def generateSinSignal(amps,freqs,d,fs):
-	"""
-	Create a signal consisting of a number of sinuses with amplitudes in numpy array amps and frequencies in numpy array freqs
-	It has duration d in [s] and sampling frequency fs in [Hz]
-	"""
-	t = np.linspace(0,d,d*fs)
-	s = np.zeros(t.shape)
-	for i in range(amps.shape[0]):
-		s = s + amps[i]*np.sin(2*np.pi*freqs[i]*t)
+    """
+    Create a signal consisting of a number of sinuses with amplitudes in numpy array amps and frequencies in numpy array freqs
+    It has duration d in [s] and sampling frequency fs in [Hz]
+    """
+    t = np.arange(0, d, 1.0/fs)
+    s = np.zeros(t.shape)
+    for i in range(amps.shape[0]):
+        s = s + amps[i] * np.sin(2 * np.pi * freqs[i] * t)
 
-	return s
+    return s
 
 
 def play_audio(audio, fs):
@@ -137,14 +137,57 @@ def bark2hz(Brk):
         f   : (ndarray)     Array containing frequencies in Hz.
     """
 
-    Fhz = 600. * np.sinh(f/6.)
+    Fhz = 600. * np.sinh(Brk/6.)
     return Fhz
 
-def mapping2barkmat(fs):
-    #Constructing matrix W which has 1’s for each Bark subband, and 0’s else:
-    nfft=1024; nfilts=48; nfreqs=nfft/2
-    binbarks = hz2bark(np.linspace(0,(nfft/2),(nfft/2)+1)*fs/nfft)
+def mapping2barkmat(fs, bin_brk, step_brk):
+    #Constructing matrix W which has 1's for each Bark subband, and 0's else:
+    nfft = bin_brk.shape[0]
+    nfilts = int(24/step_brk)
+    
     W = np.zeros((nfilts, nfft))
     for i in xrange(nfilts):
-        W[i,0:(nfft/2)+1] = (np.round(binbarks/step_barks)== i)
+        W[i,:] = (np.floor(bin_brk/step_brk)== i)
     return W
+
+def spreadingfunctionmat(maxfreq, alpha, spl_in_brk_band):
+    # Arguments: maxfreq: half the sampling frequency
+    # nfilts: Number of subbands in the Bark domain, for instance 64
+    
+    n_bands = spl_in_brk_band.shape[0] #number of bark bands
+    n_segments = spl_in_brk_band.shape[1] #number of time segments
+    size_bands = 24.0 / n_bands #size of each band in bark
+    spreading_func_brk = np.zeros(n_bands)
+    
+    for idx_brk_band, val_spl_brk in enumerate(spl_in_brk_band):
+        
+        band_upper_frqz_brk = (idx_brk_band+1)*size_bands
+        band_lower_frqz_brk = idx_brk_band*size_bands
+        band_center_brk = band_lower_frqz_brk + (band_upper_frqz_brk - band_lower_frqz_brk)*0.5
+        
+        band_upper_frqz_hz = bark2hz(band_upper_frqz_brk)
+        band_lower_frqz_hz = bark2hz(band_lower_frqz_brk)
+        band_center_hz =  band_lower_frqz_hz + (band_upper_frqz_hz - band_lower_frqz_hz)*0.5
+        
+        O_f = alpha*(14.5 + idx_brk_band) + (1-alpha)*5.5  # Simultaneous masking for tones at Bark band 12
+        slope_up = +27.0 * np.ones(n_segments)  # rising slope of spreading func
+        slope_down = -(24.0 + 0.23*band_center_hz - 0.2*val_spl_brk)  # Lower slope of spreading function
+        
+        #maxbark = hz2bark(maxfreq)
+        #spreadingfunctionBarkdB = np.zeros(2 * nfilts)
+        
+        peak = val_spl_brk - O_f
+        for idx_t, val_spl_t in enumerate(val_spl_brk):
+            spreading_func_brk[0:idx_brk_band] = np.linspace(-(band_center_brk-idx_brk_band)*slope_up[idx_t], 0, idx_brk_band) + peak[idx_t]
+        
+#         # upper slope, fbdB attenuation per Bark, over maxbark Bark (full frequency range),
+#         # with fadB dB simultaneous masking:
+#         spreadingfunctionBarkdB[0:nfilts] = np.linspace(-maxbark * fbdb, -2.5, nfilts) - fadB
+#         # lower slope fbbdb attenuation per Bark, over maxbark Bark (full frequency range):
+#         spreadingfunctionBarkdB[nfilts:2 * nfilts] = np.linspace(0, -maxbark * fbbdb, nfilts) - fadB
+#         # Convert from dB to "voltage" and include alpha exponent
+#         spreadingfunctionBarkVoltage = 10.0 ** (spreadingfunctionBarkdB / 20.0 * alpha)
+#         # Spreading functions for all bark scale bands in a matrix:
+#         spreadingfuncmatrix = np.zeros((nfilts, nfilts))
+#         for k in range(nfilts):
+#            spreadingfuncmatrix[:, k] = spreadingfunctionBarkVoltage[(nfilts - k):(2 * nfilts - k)]
