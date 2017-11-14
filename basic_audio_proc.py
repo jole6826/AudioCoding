@@ -74,7 +74,7 @@ def frame_audio(audio, frame_length):
     '''
     n_zeros = audio.size % frame_length
     audio_zeropadded = np.append(audio, np.zeros(frame_length-n_zeros))
-    framed_audio = np.reshape(audio_zeropadded, (frame_length, -1))
+    framed_audio = np.reshape(audio_zeropadded, (-1, frame_length))
     return framed_audio
 
 def write_wav(filename, rate, data):
