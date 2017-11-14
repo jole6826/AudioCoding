@@ -9,7 +9,7 @@ import pickle
 channel = 1 # L = 0, R = 1
 length_segment = 8 # in seconds
 plot_audio = True
-play_audio = True
+play_audio = False
 
 
 # read wav segment
@@ -54,11 +54,11 @@ if plot_audio:
     fft_audio = np.abs(np.fft.fft(framed_audio, axis=1))
     frqz_resp = 20*np.log10(fft_audio)
 
-    plt.semilogx(frqz_resp[:,0], 'b', lw=0.4, alpha=0.5)
-    plt.semilogx(frqz_resp[:,1], 'r', lw=0.4, alpha=0.5)
-    plt.semilogx(frqz_resp[:,2], 'g', lw=0.4, alpha=0.5)
-    plt.semilogx(frqz_resp[:,3], 'y', lw=0.4, alpha=0.5)
-    plt.xlabel('f in Hz')
+    plt.plot(frqz_resp[0,:], 'b', lw=0.4, alpha=0.5)
+    plt.plot(frqz_resp[1,:], 'r', lw=0.4, alpha=0.5)
+    plt.plot(frqz_resp[2,:], 'g', lw=0.4, alpha=0.5)
+    plt.plot(frqz_resp[3,:], 'y', lw=0.4, alpha=0.5)
+    plt.xlabel('f in frequency bins')
     plt.ylabel('Magnitude in dB')
     plt.show()
     
