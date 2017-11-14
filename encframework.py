@@ -2,7 +2,7 @@ import basic_audio_proc
 import numpy as np
 import warnings
 import pickle
-#import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 
 ########################################
 # Adjust here before running the script#
@@ -10,7 +10,7 @@ import pickle
 channel = 1 # L = 0, R = 1
 length_segment = 8 # in seconds
 playplot_audio = False
-plot_audio = False
+plot_audio = True
 play_audio = False
 
 
@@ -24,7 +24,7 @@ encoded8bit_audio = basic_audio_proc.quantize(norm_audio, org_dtype, 8)
 
 #pickle.dump(encoded16bit_audio, open('encoded16bit.bin', 'wb'), 1)
 #pickle.dump(encoded8bit_audio, open('encoded8bit.bin', 'wb'), 1)
-   
+
 
 if play_audio:
 	print("Playing original:")
@@ -36,13 +36,13 @@ if play_audio:
 if plot_audio:
     plt.plot(norm_audio, lw = 0.2)
     plt.show()
-    
+
     plt.plot(encoded16bit_audio, lw = 0.2)
-    plt.show()    
-    
+    plt.show()
+
     plt.plot(encoded8bit_audio, lw = 0.2)
-    plt.show()    
-    
+    plt.show()
+
     # block into 1024 sample blocks
     framed_audio = basic_audio_proc.frame_audio(norm_audio, 1024)
     fft_audio = np.abs(np.fft.fft(framed_audio, axis=1))
@@ -53,6 +53,3 @@ if plot_audio:
     plt.semilogx(frqz_resp[:,2], 'g', lw=0.4, alpha=0.5)
     plt.semilogx(frqz_resp[:,3], 'y', lw=0.4, alpha=0.5)
     plt.show()
-    
-    
-

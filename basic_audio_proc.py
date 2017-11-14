@@ -141,7 +141,8 @@ def bark2hz(Brk):
     return Fhz
 
 def mapping2barkmat(fs):
-    #Constructing matrix W which has 1’s for each Bark subband, and 0’s else:
+    """Constructing matrix W which has 1's for each Bark subband, and 0's else:
+    """
     nfft=1024; nfilts=48; nfreqs=nfft/2
     binbarks = hz2bark(np.linspace(0,(nfft/2),(nfft/2)+1)*fs/nfft)
     W = np.zeros((nfilts, nfft))
