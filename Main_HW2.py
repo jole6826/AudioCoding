@@ -22,7 +22,7 @@ sinSignal = np.int16(basic_audio_proc.generateSinSignal(amps,freqz,length_audio,
 
 if play_audio:
     basic_audio_proc.play_audio(sinSignal, fs)
-    
+
 f_stft_hz, t_stft, Zxx_stft = sig.stft(sinSignal, fs, nperseg=2048, nfft=2048)
 power_stft = np.square(np.abs(Zxx_stft))
 
