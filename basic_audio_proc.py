@@ -38,6 +38,40 @@ def quantize(audio, org_dtype, wordlength):
     quantized = quantized.astype(output_datatypes[wordlength])
     return quantized
 
+def huffmanCoding(audio,cBook):
+    '''huffmannCoding performs huffman coding on 8 bit quantized audio data
+    Input:
+        audio -     int8 quantized data (maybe in blocks of size 1024 or similar)
+        cBook -     huffman codebook that stores the respective "bitstream" for each possible symbol of audio
+                    in data range of int8
+
+    Output:
+        coded -     string (?, decide data structure) containing binary values
+        '''
+    import numpy as np
+
+    nSamples = len(audio)
+    maxVal = float(np.max(audio))
+    minVal = float(np.min(audio))
+    min_dtype = float(np.iinfo(np.int8).min)
+    max_dtype = float(np.iinfo(np.int8).max)
+
+
+    if maxVal > max_dtype or minVal < min_dtype:
+        print ("data contains values outside of int8 range")
+
+    print("error, not implemented yet")
+
+    coded = ""
+
+    for ix in xrange(0,nSamples):
+        # apply codebook for each sample
+        cBookIx = cBook[:, 0] == ix
+        binSymbol = cBook[cBookIx]
+        binSymbol = "10"
+        coded += binSymbol
+    return coded
+
 def read_segment(filename, duration, channel):
     '''
     Reads arbitrary wav file.
