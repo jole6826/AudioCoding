@@ -8,15 +8,10 @@ import pickle
 ########################################
 channel = 1 # L = 0, R = 1
 length_segment = 8 # in seconds
-<<<<<<< HEAD
-playplot_audio = False
-plot_audio = True
-play_audio = False
-=======
+
 plot_audio = False
 play_audio = False
 dumpFiles = False
->>>>>>> master
 
 
 # read wav segment
@@ -26,28 +21,7 @@ dumpFiles = False
 encoded16bit_audio = basic_audio_proc.quantize(norm_audio, org_dtype, 16)
 encoded8bit_audio = basic_audio_proc.quantize(norm_audio, org_dtype, 8)
 
-<<<<<<< HEAD
 
-#pickle.dump(encoded16bit_audio, open('encoded16bit.bin', 'wb'), 1)
-#pickle.dump(encoded8bit_audio, open('encoded8bit.bin', 'wb'), 1)
-
-
-if play_audio:
-	print("Playing original:")
-	basic_audio_proc.play_audio(norm_audio, fs)
-	print("Playing 16bit quantized:")
-	basic_audio_proc.play_audio(encoded16bit_audio, fs)
-	print("Playing 8bit quantized:")
-	basic_audio_proc.play_audio(encoded8bit_audio, fs)
-if plot_audio:
-    plt.plot(norm_audio, lw = 0.2)
-    plt.show()
-
-    plt.plot(encoded16bit_audio, lw = 0.2)
-    plt.show()
-
-    plt.plot(encoded8bit_audio, lw = 0.2)
-=======
 # processing and coding goes here
 # creating codebook like: https://gist.github.com/mreid/fdf6353ec39d050e972b
 codebookTest = np.linspace(-128,127,256,dtype=np.int8)
@@ -91,7 +65,6 @@ if plot_audio:
     plt.plot(t_axis, encoded8bit_audio, lw = 0.2)
     plt.title('8bit encoded Audio')
     plt.xlabel('t in seconds')
->>>>>>> master
     plt.show()
 
     # block into 1024 sample blocks
