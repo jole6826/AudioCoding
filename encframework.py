@@ -8,8 +8,8 @@ import pickle
 ########################################
 channel = 1 # L = 0, R = 1
 length_segment = 8 # in seconds
-plot_audio = True
-play_audio = True
+plot_audio = False
+play_audio = False
 dumpFiles = False
 
 
@@ -22,6 +22,17 @@ encoded8bit_audio = basic_audio_proc.quantize(norm_audio, org_dtype, 8)
 
 # processing and coding goes here
 # creating codebook like: https://gist.github.com/mreid/fdf6353ec39d050e972b
+codebookTest = np.linspace(-128,127,256,dtype=np.int8)
+codebookTest2 = ["" for x in range(256)]
+for i in xrange(0,256,1):
+    codebookTest2[i] = "{0:08b}".format(codebookTest[i] & 0xff)
+
+codebookTestJoined = np.empty([256,2],dtype=np.object)
+codebookTestJoined[:,0] = codebookTest
+codebookTestJoined [:,1] = codebookTest2
+
+signaltest = np.array([-127,-120,-50,40,0,32,1,127],dtype=np.int8)
+bitsOut = basic_audio_proc.huffmanCoding(signaltest,codebookTestJoined)
 
 # save files as binary data
 if dumpFiles:
@@ -59,10 +70,10 @@ if plot_audio:
     fft_audio = np.abs(np.fft.fft(framed_audio, axis=0))
     frqz_resp = 20*np.log10(fft_audio)
 
-    plt.semilogx(frqz_resp[:,0], 'b', lw=0.4, alpha=0.5)
-    plt.semilogx(frqz_resp[:,1], 'r', lw=0.4, alpha=0.5)
-    plt.semilogx(frqz_resp[:,2], 'g', lw=0.4, alpha=0.5)
-    plt.semilogx(frqz_resp[:,3], 'y', lw=0.4, alpha=0.5)
-    plt.xlabel('f in Hz')
+    plt.plot(frqz_resp[0,:], 'b', lw=0.4, alpha=0.5)
+    plt.plot(frqz_resp[1,:], 'r', lw=0.4, alpha=0.5)
+    plt.plot(frqz_resp[2,:], 'g', lw=0.4, alpha=0.5)
+    plt.plot(frqz_resp[3,:], 'y', lw=0.4, alpha=0.5)
+    plt.xlabel('f in frequency bins')
     plt.ylabel('Magnitude in dB')
     plt.show()

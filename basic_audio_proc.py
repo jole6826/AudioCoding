@@ -64,11 +64,11 @@ def huffmanCoding(audio,cBook):
 
     coded = ""
 
-    for ix in xrange(0,nSamples):
+    for ix in xrange(0,nSamples,1):
         # apply codebook for each sample
-        cBookIx = cBook[:, 0] == ix
-        binSymbol = cBook[cBookIx]
-        binSymbol = "10"
+        cBookIx = cBook[:, 0] == audio[ix]
+        binSymbol = cBook[cBookIx,1]
+        #binSymbol = "10"
         coded += binSymbol
     return coded
 
@@ -108,7 +108,7 @@ def frame_audio(audio, frame_length):
     '''
     n_zeros = audio.size % frame_length
     audio_zeropadded = np.append(audio, np.zeros(frame_length-n_zeros))
-    framed_audio = np.reshape(audio_zeropadded, (frame_length, -1))
+    framed_audio = np.reshape(audio_zeropadded, (-1, frame_length))
     return framed_audio
 
 def write_wav(filename, rate, data):
