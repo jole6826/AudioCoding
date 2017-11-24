@@ -24,17 +24,12 @@ encoded8bit_audio = basic_audio_proc.quantize(norm_audio, org_dtype, 8)
 
 # processing and coding goes here
 # creating codebook like: https://gist.github.com/mreid/fdf6353ec39d050e972b
-codebookTest = np.linspace(-128,127,256,dtype=np.int8)
-codebookTest2 = ["" for x in range(256)]
-for i in xrange(0,256,1):
-    codebookTest2[i] = "{0:08b}".format(codebookTest[i] & 0xff)
 
-codebookTestJoined = np.empty([256,2],dtype=np.object)
-codebookTestJoined[:,0] = codebookTest
-codebookTestJoined [:,1] = codebookTest2
+# create huffman codebook using original signal
+codebookTest3 = basic_audio_proc.createHuffmanCodebook(encoded8bit_audio)
 
-signaltest = np.array([-127,-120,-50,40,0,32,1,127],dtype=np.int8)
-bitsOut = basic_audio_proc.huffmanCoding(encoded8bit_audio,codebookTestJoined)
+# encode using that codebook
+bitsOut = basic_audio_proc.huffmanCoding(encoded8bit_audio,codebookTest3)
 
 # save files as binary data
 if dumpHuffman:
