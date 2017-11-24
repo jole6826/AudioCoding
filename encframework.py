@@ -2,6 +2,7 @@ import basic_audio_proc
 import numpy as np
 import matplotlib.pyplot as plt
 import pickle
+import bitstring as bits
 
 ########################################
 # Adjust here before running the script#
@@ -11,6 +12,7 @@ length_segment = 8 # in seconds
 plot_audio = False
 play_audio = False
 dumpFiles = False
+dumpHuffman = True
 
 
 # read wav segment
@@ -32,9 +34,14 @@ codebookTestJoined[:,0] = codebookTest
 codebookTestJoined [:,1] = codebookTest2
 
 signaltest = np.array([-127,-120,-50,40,0,32,1,127],dtype=np.int8)
-bitsOut = basic_audio_proc.huffmanCoding(signaltest,codebookTestJoined)
+bitsOut = basic_audio_proc.huffmanCoding(encoded8bit_audio,codebookTestJoined)
 
 # save files as binary data
+if dumpHuffman:
+    f=open('huffEncoded8bit.bin', 'wb')
+    bitsOut.tofile(f)
+    f.close()
+
 if dumpFiles:
     pickle.dump(encoded16bit_audio, open('encoded16bit.bin', 'wb'), 1)
     pickle.dump(encoded8bit_audio, open('encoded8bit.bin', 'wb'), 1)

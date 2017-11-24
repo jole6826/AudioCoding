@@ -49,6 +49,7 @@ def huffmanCoding(audio,cBook):
         coded -     string (?, decide data structure) containing binary values
         '''
     import numpy as np
+    import bitstring as bits
 
     nSamples = len(audio)
     maxVal = float(np.max(audio))
@@ -70,7 +71,8 @@ def huffmanCoding(audio,cBook):
         binSymbol = cBook[cBookIx,1]
         #binSymbol = "10"
         coded += binSymbol
-    return coded
+    bitStreamOut = bits.BitArray(bin=coded[0])
+    return bitStreamOut
 
 def read_segment(filename, duration, channel):
     '''
