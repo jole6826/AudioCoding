@@ -110,7 +110,7 @@ def huffmanCb(p):
     # Recurse and construct code on new distribution
     c = huffmanCb(p_prime)
     ca1a2 = c.pop(a1 + a2)
-    c[a1], c[a2] = ca1a2 + '0', ca1a2 + '1'git statu
+    c[a1], c[a2] = ca1a2 + '0', ca1a2 + '1'
 
 
     return c
