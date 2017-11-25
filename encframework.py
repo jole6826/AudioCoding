@@ -1,4 +1,5 @@
 import basic_audio_proc
+import huffmanCoding as hc
 import numpy as np
 import matplotlib.pyplot as plt
 import pickle
@@ -26,15 +27,32 @@ encoded8bit_audio = basic_audio_proc.quantize(norm_audio, org_dtype, 8)
 # creating codebook like: https://gist.github.com/mreid/fdf6353ec39d050e972b
 
 # create huffman codebook using original signal
-codebookTest3 = basic_audio_proc.createHuffmanCodebook(encoded8bit_audio)
+codebook = hc.createHuffmanCodebook(encoded8bit_audio)
 
-# encode using that codebook
-bitsOut = basic_audio_proc.huffmanCoding(encoded8bit_audio,codebookTest3)
+# create codebook using gaussian distribution of probablities
+testVasls = np.linspace(-128,127,num=256)
+mu = 0
+sig = 30
+x = np.linspace(0,256,num=256)
+testHist = np.exp(-np.power(testVasls - mu, 2.) / (2 * np.power(sig, 2.)))
+cbGaussianDist = hc.createHuffmanCodebookFromHist(testHist, testVasls)
+
+'''plt.plot(testVasls,testHist)
+plt.show()
+'''
+
+# encode using that codebooks
+huffmanEncoded8bit_fullInfos = hc.huffmanEncoder(encoded8bit_audio,codebook)
+huffmanEncoded8bit_gaussianDist = hc.huffmanEncoder(encoded8bit_audio,cbGaussianDist)
+
 
 # save files as binary data
 if dumpHuffman:
-    f=open('huffEncoded8bit.bin', 'wb')
-    bitsOut.tofile(f)
+    f=open('huffEncoded8bit_fullInfos.bin', 'wb')
+    huffmanEncoded8bit_fullInfos.tofile(f)
+    f.close()
+    f = open('huffEncoded8bit_gaussianDist.bin', 'wb')
+    huffmanEncoded8bit_gaussianDist.tofile(f)
     f.close()
 
 if dumpFiles:
