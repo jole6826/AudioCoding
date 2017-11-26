@@ -33,6 +33,8 @@ cbGaussianDist = pickle.load(open('cbGaussianDist.bin', 'rb'))
 hcDecoded = hc.huffmanDecoder(bitstreamHuffEnc, cb)
 hcDecodedGD = hc.huffmanDecoder(bitstreamHuffEncGD, cbGaussianDist)
 
+
+
 basic_audio_proc.write_wav('decoded16bit.wav', 44100, audio16bit)
 basic_audio_proc.write_wav('decoded8bit.wav', 44100, audio8bitUnsigned)
 

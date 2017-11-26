@@ -17,7 +17,7 @@ def huffmanEncoder(audio,cBook):
         coded -     string (?, decide data structure) containing binary values
         '''
 
-    nSamples = len(audio)
+    nSamples = audio.shape[0]
     maxVal = float(np.max(audio))
     minVal = float(np.min(audio))
     min_dtype = float(np.iinfo(np.int8).min)
@@ -27,18 +27,42 @@ def huffmanEncoder(audio,cBook):
     if maxVal > max_dtype or minVal < min_dtype:
         print ("data contains values outside of int8 range")
 
-    coded = ""
+    coded = '0b'
 
-    for ix in xrange(0,nSamples,1):
+    for samp in audio:
         # apply codebook for each sample
-        binSymbol = cBook[str(np.float(audio[ix]))]
+        binSymbol = cBook[str(np.float(samp))]
+        #binSymbol = cBook[str(np.float(audio[ix]))]
         coded += binSymbol
     bitStreamOut = bits.BitArray(bin=coded)
     return bitStreamOut
 
 def huffmanDecoder(bitstream,cBook):
-
-    print('error: not implemented yet!')
+    bits = bitstream.bin
+    inv_cBook = {bit_code: value for value, bit_code in cBook.iteritems()}
+    nSamples_max = len(bits) / min([len(key) for key in inv_cBook.keys()]) + 1
+    decoded = np.zeros((nSamples_max, 1))
+    
+    idx_sample = 0
+    while (len(bits) > 0):
+        for idx_bitstream in np.arange(1, len(bits)):
+            code_to_find = bits[0:idx_bitstream]
+            try:
+                decoded_val = inv_cBook[code_to_find]
+                # this is only executed if values was found
+                decoded[idx_sample] = decoded_val
+                idx_sample += 1
+                bits = bits[idx_bitstream:] #delete the found bits
+                break #break for loop and start new one
+            except KeyError:
+                # if code not found and no more bits in stream, end of bitstream is reached (zero padded...)
+                if idx_bitstream == len(bits) - 1:
+                    bits = []
+                    break
+                # if code until now not found, just go on (the beauty of prefix codes)
+                pass 
+            
+    return decoded
 
 def createHuffmanCodebook(audio):
     # function to create huffman codebook using probabilities of each symbol
@@ -48,9 +72,10 @@ def createHuffmanCodebook(audio):
     org_dtype = audio.dtype
     min_dtype = float(np.iinfo(org_dtype).min)
     max_dtype = float(np.iinfo(org_dtype).max)
-    nSamples = audio.__len__()
-    hist, bins = np.histogram(audio, 256, [min_dtype, max_dtype])
-    prob = np.float32(hist) /nSamples
+    nSamples = audio.shape[0]
+    nPossibleVals = int(max_dtype - min_dtype + 1)
+    hist, __ = np.histogram(audio, nPossibleVals, [min_dtype, max_dtype])
+    prob = np.float32(hist) / nSamples
     prob = prob[hist != 0]
     vals = np.linspace(min_dtype,max_dtype,num=256)[hist != 0]
     p = zip(map(str,vals),prob)
@@ -96,7 +121,6 @@ def huffmanCb(p):
     c = huffmanCb(p_prime)
     ca1a2 = c.pop(a1 + a2)
     c[a1], c[a2] = ca1a2 + '0', ca1a2 + '1'
-
 
     return c
 

@@ -27,11 +27,7 @@ encoded8bit_audio = basic_audio_proc.quantize(norm_audio, org_dtype, 8)
 # creating codebook like: https://gist.github.com/mreid/fdf6353ec39d050e972b
 
 # create huffman codebook using original signal
-<<<<<<< HEAD
 cb = hc.createHuffmanCodebook(encoded8bit_audio)
-=======
-codebook = hc.createHuffmanCodebook(encoded8bit_audio)
->>>>>>> 9490ccfe8af5aff5604025ca2082eb5782176cf2
 
 # create codebook using gaussian distribution of probablities
 testVasls = np.linspace(-128,127,num=256)
@@ -41,27 +37,16 @@ x = np.linspace(0,256,num=256)
 testHist = np.exp(-np.power(testVasls - mu, 2.) / (2 * np.power(sig, 2.)))
 cbGaussianDist = hc.createHuffmanCodebookFromHist(testHist, testVasls)
 
-<<<<<<< HEAD
 # plt.plot(testVasls,testHist)
 # plt.show()
 
 # encode using that codebooks
 huffmanEncoded8bit_fullInfos = hc.huffmanEncoder(encoded8bit_audio, cb)
 huffmanEncoded8bit_gaussianDist = hc.huffmanEncoder(encoded8bit_audio, cbGaussianDist)
-=======
-'''plt.plot(testVasls,testHist)
-plt.show()
-'''
-
-# encode using that codebooks
-huffmanEncoded8bit_fullInfos = hc.huffmanEncoder(encoded8bit_audio,codebook)
-huffmanEncoded8bit_gaussianDist = hc.huffmanEncoder(encoded8bit_audio,cbGaussianDist)
->>>>>>> 9490ccfe8af5aff5604025ca2082eb5782176cf2
 
 
 # save files as binary data
 if dumpHuffman:
-<<<<<<< HEAD
     with open('huffEncoded8bit_fullInfos.bin', 'wb') as f:
         huffmanEncoded8bit_fullInfos.tofile(f)
         f.close()
@@ -72,14 +57,6 @@ if dumpHuffman:
     # dump codebooks, ideally this should be in the same file as the bitstream
     pickle.dump(cb, open('cb.bin', 'wb'), 1)
     pickle.dump(cbGaussianDist, open('cbGaussianDist.bin', 'wb'), 1)
-=======
-    f=open('huffEncoded8bit_fullInfos.bin', 'wb')
-    huffmanEncoded8bit_fullInfos.tofile(f)
-    f.close()
-    f = open('huffEncoded8bit_gaussianDist.bin', 'wb')
-    huffmanEncoded8bit_gaussianDist.tofile(f)
-    f.close()
->>>>>>> 9490ccfe8af5aff5604025ca2082eb5782176cf2
 
 if dumpFiles:
     pickle.dump(encoded16bit_audio, open('encoded16bit.bin', 'wb'), 1)
