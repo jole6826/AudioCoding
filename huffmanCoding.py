@@ -5,6 +5,12 @@ import matplotlib.pyplot as plt
 import numpy as np
 import bitstring as bits
 
+class HufmannTree(object):
+    def __init__(self, node0, node1, data, p):
+        self.node0 = node0
+        self.node1 = node1
+        self.data = data
+        self.p = p
 
 def huffmanEncoder(audio,cBook):
     '''huffmannCoding performs huffman coding on 8 bit quantized audio data
@@ -17,7 +23,6 @@ def huffmanEncoder(audio,cBook):
         coded -     string (?, decide data structure) containing binary values
         '''
 
-    nSamples = audio.shape[0]
     maxVal = float(np.max(audio))
     minVal = float(np.min(audio))
     min_dtype = float(np.iinfo(np.int8).min)
@@ -27,17 +32,41 @@ def huffmanEncoder(audio,cBook):
     if maxVal > max_dtype or minVal < min_dtype:
         print ("data contains values outside of int8 range")
 
-    coded = '0b'
+    coded = ''
 
     for samp in audio:
         # apply codebook for each sample
         binSymbol = cBook[str(np.float(samp))]
         #binSymbol = cBook[str(np.float(audio[ix]))]
         coded += binSymbol
-    bitStreamOut = bits.BitArray(bin=coded)
+    # bitstream pads zeros to nearest number of bytes -> we have to know how many to throw away: maximum 7 bits
+    # we have to transmit the number of padded zeros: we need 3 more bits for that (2^3 = 8)
+    n_zero_pad = 8 - ((len(coded)+3) % 8)
+    padded_code = '{0:03b}'.format(n_zero_pad) + coded
+    
+    bitStreamOut = bits.BitArray(bin=padded_code)
     return bitStreamOut
 
-def huffmanDecoder(bitstream,cBook):
+def fastHuffmanDecoder(bitstream, cb_tree):
+    decoded = np.zeros(len(bitstream))
+     
+    idx_sample = 0
+    cb_tree_iterator = cb_tree
+    for bit in bitstream:
+        if (bit == '0') & (cb_tree_iterator.node0 != None) & (cb_tree_iterator.node1 != None):
+            cb_tree_iterator = cb_tree_iterator.node0
+        elif (bit == '1') & (cb_tree_iterator.node0 != None) & (cb_tree_iterator.node1 != None):
+            cb_tree_iterator = cb_tree_iterator.node1
+
+        if (cb_tree_iterator.node0 == None) & (cb_tree_iterator.node1 == None):
+            decoded[idx_sample] = cb_tree_iterator.data
+            idx_sample += 1
+            cb_tree_iterator = cb_tree
+
+    return decoded[0:idx_sample] 
+
+''' this is way too slow...        
+def huffmanDecoder(bitstream, cBook):
     bits = bitstream.bin
     inv_cBook = {bit_code: value for value, bit_code in cBook.iteritems()}
     nSamples_max = len(bits) / min([len(key) for key in inv_cBook.keys()]) + 1
@@ -63,6 +92,7 @@ def huffmanDecoder(bitstream,cBook):
                 pass 
             
     return decoded
+'''
 
 def createHuffmanCodebook(audio):
     # function to create huffman codebook using probabilities of each symbol
@@ -75,15 +105,34 @@ def createHuffmanCodebook(audio):
     nSamples = audio.shape[0]
     nPossibleVals = int(max_dtype - min_dtype + 1)
     hist, __ = np.histogram(audio, nPossibleVals, [min_dtype, max_dtype])
-    prob = np.float32(hist) / nSamples
-    prob = prob[hist != 0]
-    vals = np.linspace(min_dtype,max_dtype,num=256)[hist != 0]
-    p = zip(map(str,vals),prob)
-    p = dict(p)
+    probs = np.float32(hist) / nSamples
+    probs = probs[hist != 0]
+    vals = np.linspace(min_dtype,max_dtype,num=nPossibleVals)[hist != 0]
+    
+    init_tree = [HufmannTree(None, None, value, probs[idx]) for idx, value in enumerate(vals)]
 
-    c = huffmanCb(p)
-    return c
+    codebook_tree = build_huffman_tree(init_tree)
+    codebook = tree2codebook(codebook_tree, '')
+    return codebook, codebook_tree
 
+def build_huffman_tree(init_tree):
+    while len(init_tree) >= 2:
+        lowest_left, lowest_right = lowest_prob_nodes(init_tree)
+        init_tree.remove(lowest_left)
+        init_tree.remove(lowest_right)
+        init_tree.append(HufmannTree(lowest_left, lowest_right, str(lowest_left.data) + str(lowest_right.data), lowest_left.p + lowest_right.p))
+    return init_tree[0]
+
+def tree2codebook(huffman_tree, current_code):
+    if (huffman_tree.node0 != None) & (huffman_tree.node1 != None):
+        cb_left = tree2codebook(huffman_tree.node0, current_code + '0')
+        cb_right = tree2codebook(huffman_tree.node1, current_code + '1')
+        cb = cb_left.copy()
+        cb.update(cb_right)
+        return cb
+    else:
+        return dict({str(huffman_tree.data): current_code})   
+   
 def createHuffmanCodebookFromHist(hist,vals):
     # function to create huffman codebook using probabilities of each symbol
     # p is an array that contains the symbols p[:,0] and probabilities p[:,1]
@@ -124,6 +173,10 @@ def huffmanCb(p):
 
     return c
 
+def lowest_prob_nodes(huffman_tree):
+    sorted_tree = sorted(huffman_tree, key=lambda node: node.p)
+    return sorted_tree[0], sorted_tree[1]
+    
 def lowest_prob_pair(p):
     '''Return pair of symbols from distribution p with lowest probabilities.'''
     assert(len(p) >= 2) # Ensure there are at least 2 symbols in the dist.

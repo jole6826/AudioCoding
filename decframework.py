@@ -5,36 +5,35 @@ import numpy as np
 import matplotlib.pyplot as plt
 import bitstring as bits
 
-
+# load unencoded 8bit or 16bit
 audio16bit = pickle.load(open('encoded16bit.bin', 'rb'))
 audio8bit = pickle.load(open('encoded8bit.bin', 'rb'))
 # 8 bit is unsigned: https://docs.scipy.org/doc/scipy-0.19.1/reference/generated/scipy.io.wavfile.write.html
 audio8bitUnsigned = (audio8bit + 128).astype(np.uint8)
 
 # read bitstream from huffman encoded files
-bitstreamHuffEnc = bits.BitArray(filename = 'huffEncoded8bit_fullInfos.bin')
-bitstreamHuffEncGD = bits.BitArray(filename = 'huffEncoded8bit_gaussianDist.bin')
-
-
-# Huffman decoding
-# should be replaced: read codebooks from binary files
+bitstreamHuffEnc = bits.BitArray(filename = 'encoded8bit_huffman.bin')
+# read Huffman codebook
 cb = pickle.load(open('cb.bin', 'rb'))
+
+''' Distribution Approach
+bitstreamHuffEncGD = bits.BitArray(filename = 'huffEncoded8bit_gaussianDist.bin')
 cbGaussianDist = pickle.load(open('cbGaussianDist.bin', 'rb'))
 
-# create codebook using gaussian distribution of probablities
-# testVasls = np.linspace(-128,127,num=256)
-# mu = 0
-# sig = 30
-# x = np.linspace(0,256,num=256)
-# testHist = np.exp(-np.power(testVasls - mu, 2.) / (2 * np.power(sig, 2.)))
-# cbGaussianDist = hc.createHuffmanCodebookFromHist(testHist,testVasls)
+hcDecodedGD = hc.huffmanDecoder(bitstreamHuffEncGD, cbGaussianDist)
+'''
 
 # decoding
-hcDecoded = hc.huffmanDecoder(bitstreamHuffEnc, cb)
-hcDecodedGD = hc.huffmanDecoder(bitstreamHuffEncGD, cbGaussianDist)
+all_bits = bitstreamHuffEnc.bin
+n_padded_zeros = int(all_bits[0:3], 2)
+data_stream = all_bits[3:-n_padded_zeros]
+hcDecoded = hc.fastHuffmanDecoder(data_stream, cb)
 
+diff = hcDecoded - audio8bit
+plt.plot(diff)
+plt.show()
 
-
+# Homework 1: write 8bit/16bit encoded to wav
 basic_audio_proc.write_wav('decoded16bit.wav', 44100, audio16bit)
 basic_audio_proc.write_wav('decoded8bit.wav', 44100, audio8bitUnsigned)
 
