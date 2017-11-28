@@ -1,9 +1,5 @@
-import scipy.io.wavfile as wv
+import struct
 import numpy as np
-import pyaudio
-import matplotlib.pyplot as plt
-import numpy as np
-import bitstring as bits
 
 class HufmannTree(object):
     def __init__(self, node0, node1, data, p):
@@ -41,11 +37,12 @@ def huffmanEncoder(audio,cBook):
         coded += binSymbol
     # bitstream pads zeros to nearest number of bytes -> we have to know how many to throw away: maximum 7 bits
     # we have to transmit the number of padded zeros: we need 3 more bits for that (2^3 = 8)
-    n_zero_pad = 8 - ((len(coded)+3) % 8)
-    padded_code = '{0:03b}'.format(n_zero_pad) + coded
+#     n_zero_pad = 8 - ((len(coded)+3) % 8)
+#     padded_code = '{0:03b}'.format(n_zero_pad) + coded
+#     padded_code = '0b' + padded_code
     
-    bitStreamOut = bits.BitArray(bin=padded_code)
-    return bitStreamOut
+    #bitStreamOut = bits.BitArray(bin=padded_code)
+    return coded
 
 def fastHuffmanDecoder(bitstream, cb_tree):
     decoded = np.zeros(len(bitstream))
@@ -65,34 +62,29 @@ def fastHuffmanDecoder(bitstream, cb_tree):
 
     return decoded[0:idx_sample] 
 
-''' this is way too slow...        
+  
 def huffmanDecoder(bitstream, cBook):
-    bits = bitstream.bin
     inv_cBook = {bit_code: value for value, bit_code in cBook.iteritems()}
-    nSamples_max = len(bits) / min([len(key) for key in inv_cBook.keys()]) + 1
-    decoded = np.zeros((nSamples_max, 1))
+    nSamples_max = len(bitstream) / min([len(key) for key in inv_cBook.keys()]) + 1
+    decoded = np.zeros(nSamples_max)
     
     idx_sample = 0
-    while (len(bits) > 0):
-        for idx_bitstream in np.arange(1, len(bits)):
-            code_to_find = bits[0:idx_bitstream]
-            try:
-                decoded_val = inv_cBook[code_to_find]
-                # this is only executed if values was found
-                decoded[idx_sample] = decoded_val
-                idx_sample += 1
-                bits = bits[idx_bitstream:] #delete the found bits
-                break #break for loop and start new one
-            except KeyError:
-                # if code not found and no more bits in stream, end of bitstream is reached (zero padded...)
-                if idx_bitstream == len(bits) - 1:
-                    bits = []
-                    break
-                # if code until now not found, just go on (the beauty of prefix codes)
-                pass 
-            
+    
+    code_to_find = ''
+    for bit in bitstream:
+        code_to_find = code_to_find + bit
+        try:
+            decoded_val = inv_cBook[code_to_find]
+            # this is only executed if values was found
+            decoded[idx_sample] = decoded_val
+            idx_sample += 1
+            code_to_find = ''
+        except KeyError:
+            # if code not found do nothing
+            pass   
+    
+    decoded = decoded[:idx_sample]            
     return decoded
-'''
 
 def createHuffmanCodebook(audio):
     # function to create huffman codebook using probabilities of each symbol
@@ -183,3 +175,23 @@ def lowest_prob_pair(p):
 
     sorted_p = sorted(p.items(), key=lambda (i,pi): pi)
     return sorted_p[0][0], sorted_p[1][0]
+
+def pack_bits_to_bytes(bitstream):
+    n_bytes = len(bitstream)/8
+    bytes_stream = np.zeros(n_bytes, dtype=int)
+    for m in range(n_bytes):
+        bytes_stream[m] = eval('0b' + bitstream[m*8:(m*8+8)])
+    
+    str_bytes = struct.pack('B'*len(bytes_stream), *bytes_stream)
+    return str_bytes
+
+def unpack_bytes_to_bits(byte_string):  
+    unpacked_bytes = struct.unpack('B'*len(byte_string), byte_string) 
+    
+    bitstream = ''
+    for byte in unpacked_bytes:
+        #create bit string from byte:
+        bits = bin(byte)
+        bitstream = bitstream + bits[2:].zfill(8)
+    
+    return bitstream
