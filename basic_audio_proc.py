@@ -92,18 +92,6 @@ def generateSinSignal(amps,freqs,d,fs):
         s = s + amps[i] * np.sin(2 * np.pi * freqs[i] * t)
 
     return s
-=======
-    """
-    Create a signal consisting of a number of sinuses with amplitudes in numpy array amps and frequencies in numpy array freqs
-    It has duration d in [s] and sampling frequency fs in [Hz]
-    """
-    t = np.arange(0, d, 1.0/fs)
-    s = np.zeros(t.shape)
-    for i in range(amps.shape[0]):
-        s = s + amps[i] * np.sin(2 * np.pi * freqs[i] * t)
-
-    return s
->>>>>>> 0b347721a2d501f651630c09b90a5f5d08254f38
 
 
 def play_audio(audio, fs):
@@ -187,7 +175,7 @@ def calc_spreadingfunc_brk(alpha, spl_in_brk_band, plot):
         band_lower_frqz_brk = idx_brk_band*size_bands
         band_center_brk = band_lower_frqz_brk + (band_upper_frqz_brk - band_lower_frqz_brk)*0.5
         bark_quarter_idx = int(band_center_brk*4) # peaks of spreading func shall be at half of band -> 0.25
-=======
+
 
 def spreadingfunctionmat(maxfreq, alpha, spl_in_brk_band):
     # Arguments: maxfreq: half the sampling frequency
@@ -240,4 +228,3 @@ def nonlinear_superposition(spreadingfunc_brk, alpha):
     exponentiaded_sum = np.power(summed_bands, (1-alpha))
     superposition_dB = 10 * np.log10(exponentiaded_sum) # convert back to dB
     return superposition_dB
->>>>>>> master
