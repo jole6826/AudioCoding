@@ -1,7 +1,12 @@
 import basic_audio_proc
 import huffmanCoding as hc
+import filterBanks as fb
 import pickle
 import os
+import matplotlib.pyplot as plt
+import numpy as np
+import scipy.signal as signal
+
 
 dumpFiles = True
 
@@ -18,6 +23,39 @@ def read_and_quantize(audio_id, length_segment, channel, n_bits):
         pickle.dump(quantized_audio, open(os.path.join('bin', dump_fname), 'wb'), 1)
 
     return quantized_audio, norm_audio, fs, dump_fname
+
+def applyFilterBank(audio, fs, plotFilter=False,plotAudio=False,playAudio=False):
+    # uses a filter bank with 4 subbands to decompose a signal into 4 parts (lowpass, 2 bandpass and highpass signal)
+
+    bLp, bBp1, bBp2, bHp = fb.createFilterBank(fs,plotFilter=plotFilter)
+    lp_Audio, bp1_Audio, bp2_Audio, hp_Audio = fb.applyFilters(audio, bLp, bBp1, bBp2, bHp)
+
+    if playAudio:
+        print('Playing original:')
+        basic_audio_proc.play_audio(audio,fs)
+        print('Playing lowpass signal:')
+        basic_audio_proc.play_audio(lp_Audio,fs)
+        print('Playing bandpass 1:')
+        basic_audio_proc.play_audio(bp1_Audio * 10,fs)
+        print('Playing bandpass 2:')
+        basic_audio_proc.play_audio(bp2_Audio * 10, fs)
+        print('Playing highpass:')
+        basic_audio_proc.play_audio(hp_Audio * 10, fs)
+
+
+    if plotAudio:
+        plt.plot(audio)
+        plt.plot(lp_Audio)
+        plt.plot(bp1_Audio)
+        plt.plot(bp2_Audio)
+        plt.plot(hp_Audio)
+        plt.title('Audio input and outputs of the filter banks (not downsampled)')
+        plt.xlabel('Time in Samples')
+        plt.legend(('original','lowpass','bandpass1','bandpass2','highpass'))
+        plt.show()
+
+    return lp_Audio, bp1_Audio, bp2_Audio, hp_Audio
+
 
 def enc_huffman(audio):
     cb, cb_tree = hc.createHuffmanCodebook(audio)

@@ -38,6 +38,10 @@ def quantize(audio, org_dtype, wordlength):
     quantized = quantized.astype(output_datatypes[wordlength])
     return quantized
 
+def downsample(audio,N,shift=0):
+    dsAudio = audio[shift::N]
+    return dsAudio
+
 
 def read_segment(filename, duration, channel):
     '''
