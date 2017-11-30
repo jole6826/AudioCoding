@@ -1,7 +1,12 @@
 import basic_audio_proc
 import numpy as np
+import warnings
+import pickle
 import matplotlib.pyplot as plt
+<<<<<<< HEAD
+=======
 import scipy.signal as sig
+>>>>>>> 0b347721a2d501f651630c09b90a5f5d08254f38
 
 ########################################
 # Adjust here before running the script#
@@ -29,6 +34,19 @@ power_stft = np.square(np.abs(Zxx_stft))
 if plot_audio:
     plt.pcolormesh(t_stft, f_stft_hz, power_stft, vmin=0, vmax=np.amax(power_stft))
     plt.title('STFT Power')
+=======
+if plot_audio:
+    plt.plot(sinSignal)
+    plt.show()
+if play_audio:
+    basic_audio_proc.play_audio(sinSignal, fs)
+
+
+f_stft_hz, t_stft, Zxx_stft = sig.stft(sinSignal, fs, nperseg=2048, nfft=2048)
+
+if plot_audio:
+    plt.pcolormesh(t_stft, f_stft_hz, np.abs(Zxx_stft), vmin=0, vmax=amps[1])
+    plt.title('STFT Magnitude')
     plt.ylabel('Frequency [Hz]')
     plt.xlabel('Time [sec]')
     plt.show()
@@ -73,3 +91,4 @@ plt.ylabel('Masking Threshold [dB]')
 plt.legend()
 plt.show();
 test = True
+>>>>>>> master
