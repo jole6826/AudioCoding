@@ -38,9 +38,16 @@ def quantize(audio, org_dtype, wordlength):
     quantized = quantized.astype(output_datatypes[wordlength])
     return quantized
 
+
 def downsample(audio,N,shift=0):
     dsAudio = audio[shift::N]
     return dsAudio
+
+
+def upsample(audio, N, shift=0):
+    usAudio = np.zeros(len(audio)*N, dtype=audio.dtype)
+    usAudio[shift::N] = audio
+    return usAudio
 
 
 def read_segment(filename, duration, channel):
@@ -72,6 +79,7 @@ def read_segment(filename, duration, channel):
     mono_norm_segment = normalize(audio_segment[:,channel])
     mono_raw_segment = audio_segment[:, channel]
     return mono_norm_segment, mono_raw_segment, audio.dtype, fs
+
 
 def frame_audio(audio, frame_length):
     '''
