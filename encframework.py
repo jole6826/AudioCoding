@@ -30,6 +30,9 @@ def applyFilterBank(audio, fs, plotFilter=False,plotAudio=False,playAudio=False)
     bLp, bBp1, bBp2, bHp = fb.createFilterBank(fs,plotFilter=plotFilter)
     lp_Audio, bp1_Audio, bp2_Audio, hp_Audio = fb.applyFilters(audio, bLp, bBp1, bBp2, bHp)
 
+
+
+
     if playAudio:
         print('Playing original:')
         basic_audio_proc.play_audio(audio,fs)
