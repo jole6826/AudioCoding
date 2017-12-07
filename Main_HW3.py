@@ -17,7 +17,7 @@ if not os.path.exists('bin'):
     os.makedirs('bin')
 
 # Encoding  
-quantized_audio, norm_audio, fs, dump_fname = enc.read_and_quantize('Track48.wav', length_segment, channel, n_bits=8)
+quantized_audio, raw_audio, norm_audio, fs, dump_fname = enc.read_and_quantize('Track48.wav', length_segment, channel, n_bits=8)
 cb, cb_tree, hdump_fname = enc.enc_huffman(quantized_audio)
 
 # Decoding

@@ -1,12 +1,7 @@
 import basic_audio_proc
 import numpy as np
-import warnings
-import pickle
 import matplotlib.pyplot as plt
-<<<<<<< HEAD
-=======
 import scipy.signal as sig
->>>>>>> 0b347721a2d501f651630c09b90a5f5d08254f38
 
 ########################################
 # Adjust here before running the script#
@@ -25,22 +20,11 @@ n_brkbands = 48
 
 sinSignal = np.int16(basic_audio_proc.generateSinSignal(amps,freqz,length_audio,fs))
 
-if play_audio:
-    basic_audio_proc.play_audio(sinSignal, fs)
-
-f_stft_hz, t_stft, Zxx_stft = sig.stft(sinSignal, fs, nperseg=2048, nfft=2048)
-power_stft = np.square(np.abs(Zxx_stft))
-
-if plot_audio:
-    plt.pcolormesh(t_stft, f_stft_hz, power_stft, vmin=0, vmax=np.amax(power_stft))
-    plt.title('STFT Power')
-=======
 if plot_audio:
     plt.plot(sinSignal)
     plt.show()
 if play_audio:
     basic_audio_proc.play_audio(sinSignal, fs)
-
 
 f_stft_hz, t_stft, Zxx_stft = sig.stft(sinSignal, fs, nperseg=2048, nfft=2048)
 
@@ -90,5 +74,3 @@ plt.xlabel('frequency [Hz]')
 plt.ylabel('Masking Threshold [dB]')
 plt.legend()
 plt.show();
-test = True
->>>>>>> master

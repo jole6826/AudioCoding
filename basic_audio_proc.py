@@ -113,7 +113,7 @@ def play_audio(audio, fs):
     p = pyaudio.PyAudio()
 
     datatype = audio.dtype
-    print datatype
+    #print datatype
     if datatype == np.int8:
         width = 1
     elif datatype == np.int16:
@@ -154,18 +154,6 @@ def bark2hz(Brk):
     Fhz = 600. * np.sinh(Brk/6.)
     return Fhz
 
-def mapping2barkmat(fs, bin_brk, step_brk):
-    #Constructing matrix W which has 1's for each Bark subband, and 0's else:
-    nfft = bin_brk.shape[0]
-    nfilts = int(24/step_brk)
-
-    W = np.zeros((nfilts, nfft))
-    for i in xrange(nfilts):
-        W[i,:] = (np.floor(bin_brk/step_brk)== i)
-    return W
-    Fhz = 600. * np.sinh(Brk/6.)
-    return Fhz
-
 def mapping2barkmat(fs, bin_brk, n_brkbands):
     #Constructing matrix W which has 1's for each Bark subband, and 0's else:
     nfft = bin_brk.shape[0]
@@ -176,47 +164,31 @@ def mapping2barkmat(fs, bin_brk, n_brkbands):
         W[i,:] = (np.floor(bin_brk/step_brk)== i)
     return W
 
-def calc_spreadingfunc_brk(alpha, spl_in_brk_band, plot):
+def calc_spreadingfunc_brk(alpha, spl_in_brk_band, plot):    
     n_bands = spl_in_brk_band.shape[0] #number of bark bands
     n_segments = spl_in_brk_band.shape[1] #number of time segments
     size_bands = 24.0 / n_bands #size of each band in bark
     spreading_func_brk = np.zeros((n_segments, n_bands, n_bands*2+1))
-
+    
     for idx_brk_band, val_spl_brk in enumerate(spl_in_brk_band):
         band_upper_frqz_brk = (idx_brk_band+1)*size_bands
         band_lower_frqz_brk = idx_brk_band*size_bands
         band_center_brk = band_lower_frqz_brk + (band_upper_frqz_brk - band_lower_frqz_brk)*0.5
         bark_quarter_idx = int(band_center_brk*4) # peaks of spreading func shall be at half of band -> 0.25
-
-
-def spreadingfunctionmat(maxfreq, alpha, spl_in_brk_band):
-    # Arguments: maxfreq: half the sampling frequency
-    # nfilts: Number of subbands in the Bark domain, for instance 64
-
-    n_bands = spl_in_brk_band.shape[0] #number of bark bands
-    n_segments = spl_in_brk_band.shape[1] #number of time segments
-    size_bands = 24.0 / n_bands #size of each band in bark
-    spreading_func_brk = np.zeros(n_bands)
-
-    for idx_brk_band, val_spl_brk in enumerate(spl_in_brk_band):
-
-        band_upper_frqz_brk = (idx_brk_band+1)*size_bands
-        band_lower_frqz_brk = idx_brk_band*size_bands
-        band_center_brk = band_lower_frqz_brk + (band_upper_frqz_brk - band_lower_frqz_brk)*0.5
-
+        
         band_upper_frqz_hz = bark2hz(band_upper_frqz_brk)
         band_lower_frqz_hz = bark2hz(band_lower_frqz_brk)
         band_center_hz =  band_lower_frqz_hz + (band_upper_frqz_hz - band_lower_frqz_hz)*0.5
-
+        
         O_f = alpha*(14.5 + idx_brk_band) + (1-alpha)*5.5  # Simultaneous masking for tones at Bark band 12
         slope_up = +27.0 * np.ones(n_segments)  # rising slope of spreading func
         slope_down = -(24.0 + 0.23*np.power(band_center_hz/1000, -1) - 0.2*val_spl_brk)  # Lower slope of spreading function
-
+                
         peak = val_spl_brk - O_f
         for idx_t, _ in enumerate(val_spl_brk):
             spreading_func_brk[idx_t, idx_brk_band, 0:bark_quarter_idx+1] = np.linspace(-band_center_brk*slope_up[idx_t], 0, bark_quarter_idx+1) + peak[idx_t]
             spreading_func_brk[idx_t, idx_brk_band, bark_quarter_idx:n_bands*2+2] = np.linspace(0, ((n_bands-idx_brk_band)*size_bands)*slope_down[idx_t], n_bands*2-bark_quarter_idx+1) + peak[idx_t]
-
+            
     if plot:
         brk_axis = np.linspace(0, n_bands/2, n_bands*2+1)
         for spreading_in_band in spreading_func_brk[n_segments/2,:,:]:
@@ -225,18 +197,18 @@ def spreadingfunctionmat(maxfreq, alpha, spl_in_brk_band):
         plt.xlabel('frequency [Bark]')
         plt.ylabel('L [dB]')
         plt.show()
-
+    
     return spreading_func_brk
 
 def nonlinear_superposition(spreadingfunc_brk, alpha):
     spreadingfunc_brk_linear = np.power(10, spreadingfunc_brk/10) # convert dB back to power
     exponentiated_bands = np.power(spreadingfunc_brk_linear, alpha)
     summed_bands = np.sum(exponentiated_bands, axis=0) # sum up bands (= columns)
-
+    
     # because of centering the peaks of spreadingfunc in middle of band we have to add up two consecutive values to get a vector of
     # the length n_bands back
     summed_bands = (summed_bands + np.roll(summed_bands,-1))[:-1:2]
-
+    
     exponentiaded_sum = np.power(summed_bands, (1-alpha))
     superposition_dB = 10 * np.log10(exponentiaded_sum) # convert back to dB
     return superposition_dB

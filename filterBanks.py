@@ -1,92 +1,55 @@
-import matplotlib.pyplot as plt
 import numpy as np
 import scipy.signal as signal
 
-
-def createFilterBank(fs, plotFilter=False):
+def createFilterBank(fs, n_bands):
     # uses a filter bank with 4 subbands to decompose a signal into 4 parts (lowpass, 2 bandpass and highpass signal)
-    nSubbands = 4 # subbands
     fNy = fs/2.0
-    bandwidth = fNy/nSubbands
-    lpLBound = 0 # lower boundary for lowpass
-    lpUBound = bandwidth # upper boundary for lowpass
-    bp1LBound = bandwidth
-    bp1UBound = 2* bandwidth
-    bp2LBound = 2*bandwidth
-    bp2UBound = 3*bandwidth
-    hpLBound = 3*bandwidth
-    hpUBound = fNy
-
+    bandwidth = fNy/n_bands
+    fb = [None]*n_bands
+    
     # create filter coefficents for subband filtering
-    bLp=signal.remez(24*nSubbands,[lpLBound,lpUBound,lpUBound+500,fNy],[1,0],[1,100],Hz=32000, type='bandpass')
-    bBp1=signal.remez(24*nSubbands,[0,bp1LBound-500,bp1LBound,bp1UBound,bp1UBound+500,fNy],[0,1,0],[100,1,100],Hz=32000, type='bandpass')
-    bBp2=signal.remez(24*nSubbands,[0,bp2LBound-500,bp2LBound,bp2UBound,bp2UBound+500,fNy],[0,1,0],[100,1,100],Hz=32000, type='bandpass')
-    bHp=signal.remez(24*nSubbands,[0,hpLBound-500,hpLBound,hpUBound],[0,1],[100,1],Hz=32000, type='bandpass')
-
-    if plotFilter:
-        plotFilterbank(bLp,bBp1,bBp2,bHp)
-
-    return bLp, bBp1, bBp2, bHp
-
-
-def applyFilters(audio,bLp,bBp1,bBp2, bHp):
-    origType = audio.dtype
-    lp_Audio = signal.lfilter(bLp, 1, audio)
-    bp1_Audio = signal.lfilter(bBp1, 1, audio)
-    bp2_Audio = signal.lfilter(bBp2, 1, audio)
-    hp_Audio = signal.lfilter(bHp, 1, audio)
-    np.clip(lp_Audio, -128, 127, out=lp_Audio)
-    np.clip(bp1_Audio, -128, 127, out=bp1_Audio)
-    np.clip(bp2_Audio, -128, 127, out=bp2_Audio)
-    np.clip(hp_Audio, -128, 127, out=hp_Audio)
+    # georg: I don't understand how to find a suitable number of taps, with 8*nSubbands as in Schuller's lecture, you get terrible
+    # overshoots for Highpass filters (apparently due to remez filter design), internet says: odd number of samples solves this, it does!
+    # also I changed from 1 -> 0.9 in passband to avoid clipping
+    fb[0] = signal.remez(32*n_bands - 1, [0, bandwidth, bandwidth+500, fNy], [0.9, 0], [1, 100], Hz=fs)
+    fb[-1] = signal.remez(32*n_bands - 1, [0, fNy-bandwidth-500, fNy-bandwidth, fNy], [0, 0.9], [100, 1], Hz=fs)
+    
+    for idx_band in range(1, n_bands-1):
+        lower_bound = idx_band * bandwidth
+        upper_bound = (idx_band+1) * bandwidth
+        
+        fb[idx_band] = signal.remez(32*n_bands - 1, [0, lower_bound-500, lower_bound, upper_bound, upper_bound+500, fNy],
+                                    [0, 0.9, 0], [100, 1, 100], Hz=fs)
+    
+    return fb
 
 
-    lp_Audio = lp_Audio.astype(origType)
-    bp1_Audio = bp1_Audio.astype(origType)
-    bp2_Audio = bp2_Audio.astype(origType)
-    hp_Audio = hp_Audio.astype(origType)
+def apply_filters(audio, filterbank):
+    orig_type = audio.dtype
+    min_dtype = np.iinfo(orig_type).min
+    max_dtype = np.iinfo(orig_type).max
+    
+    audio_in_bands = [None] * len(filterbank)
+    
+    for idx_band, band_filter in enumerate(filterbank):
+        audio_in_bands[idx_band] = signal.lfilter(band_filter, 1, audio)
+        np.clip(audio_in_bands[idx_band], min_dtype, max_dtype)
+        audio_in_bands[idx_band] = audio_in_bands[idx_band].astype(orig_type)
 
-    return lp_Audio, bp1_Audio, bp2_Audio, hp_Audio
-
-
-def applyFiltersSynthesis(lp_Audio, bp1_Audio, bp2_Audio, hp_Audio, bLp, bBp1, bBp2, bHp):
-    origType = lp_Audio.dtype
-    lp_Audio = signal.lfilter(bLp, 1, lp_Audio)
-    bp1_Audio = signal.lfilter(bBp1, 1, bp1_Audio)
-    bp2_Audio = signal.lfilter(bBp2, 1, bp2_Audio)
-    hp_Audio = signal.lfilter(bHp, 1, hp_Audio)
-    np.clip(lp_Audio, -128, 127, out=lp_Audio)
-    np.clip(bp1_Audio, -128, 127, out=bp1_Audio)
-    np.clip(bp2_Audio, -128, 127, out=bp2_Audio)
-    np.clip(hp_Audio, -128, 127, out=hp_Audio)
-
-    lp_Audio = lp_Audio.astype(origType)
-    bp1_Audio = bp1_Audio.astype(origType)
-    bp2_Audio = bp2_Audio.astype(origType)
-    hp_Audio = hp_Audio.astype(origType)
-
-    return lp_Audio, bp1_Audio, bp2_Audio, hp_Audio
+    return audio_in_bands
 
 
-def plotFilterbank(bLp,bBp1,bBp2,bHp):
-    plt.plot (bLp)
-    plt.plot (bBp1)
-    plt.plot (bBp2)
-    plt.plot (bHp)
-    plt.title('Filter Impulse Response')
-    plt.xlabel('Time in Samples')
-    plt.legend(('low pass', 'bandpass 1', 'bandpass 2','highpass'))
-    plt.show()
-    w,H=signal.freqz(bLp)
-    plt.plot(w,20*np.log10(abs(H)+1e-6))
-    w,H=signal.freqz(bBp1)
-    plt.plot(w,20*np.log10(abs(H)+1e-6))
-    w,H=signal.freqz(bBp2)
-    plt.plot(w,20*np.log10(abs(H)+1e-6))
-    w,H=signal.freqz(bHp)
-    plt.plot(w,20*np.log10(abs(H)+1e-6))
-    plt.title('Filter Magnitude Frequency Response')
-    plt.legend(('low pass', 'bandpass 1', 'bandpass 2','highpass'))
-    plt.xlabel('Normalized Frequency')
-    plt.ylabel('dB')
-    plt.show()
+def applyFiltersSynthesis(audio_in_bands, filterbank):
+    orig_type = audio_in_bands[0].dtype
+    min_dtype = np.iinfo(orig_type).min
+    max_dtype = np.iinfo(orig_type).max
+    
+    reconstructed_audio = np.zeros(len(audio_in_bands[0]))
+    
+    for idx_band, band_filter in enumerate(filterbank):
+        reconstructed_audio += signal.lfilter(band_filter, 1, audio_in_bands[idx_band])
+        
+    np.clip(reconstructed_audio, min_dtype, max_dtype)
+    reconstructed_audio = reconstructed_audio.astype(orig_type)
+
+    return reconstructed_audio
