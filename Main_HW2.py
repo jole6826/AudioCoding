@@ -20,15 +20,17 @@ n_brkbands = 48
 
 sinSignal = np.int16(basic_audio_proc.generateSinSignal(amps,freqz,length_audio,fs))
 
+if plot_audio:
+    plt.plot(sinSignal)
+    plt.show()
 if play_audio:
     basic_audio_proc.play_audio(sinSignal, fs)
 
 f_stft_hz, t_stft, Zxx_stft = sig.stft(sinSignal, fs, nperseg=2048, nfft=2048)
-power_stft = np.square(np.abs(Zxx_stft))
 
 if plot_audio:
-    plt.pcolormesh(t_stft, f_stft_hz, power_stft, vmin=0, vmax=np.amax(power_stft))
-    plt.title('STFT Power')
+    plt.pcolormesh(t_stft, f_stft_hz, np.abs(Zxx_stft), vmin=0, vmax=amps[1])
+    plt.title('STFT Magnitude')
     plt.ylabel('Frequency [Hz]')
     plt.xlabel('Time [sec]')
     plt.show()
@@ -72,4 +74,3 @@ plt.xlabel('frequency [Hz]')
 plt.ylabel('Masking Threshold [dB]')
 plt.legend()
 plt.show();
-test = True

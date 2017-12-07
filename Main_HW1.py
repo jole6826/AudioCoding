@@ -14,8 +14,8 @@ play_audio = False
 dumpHuffman = True
 
 # Encode
-quantized_audio16, norm_audio16, fs, dump_fname16 = enc.read_and_quantize('Track48.wav', length_segment, channel, n_bits=16)
-quantized_audio8, norm_audio8, fs, dump_fname8 = enc.read_and_quantize('Track48.wav', length_segment, channel, n_bits=8)
+quantized_audio16, raw_audio, norm_audio16, fs, dump_fname16 = enc.read_and_quantize('Track48.wav', length_segment, channel, n_bits=16)
+quantized_audio8, raw_audio, norm_audio8, fs, dump_fname8 = enc.read_and_quantize('Track48.wav', length_segment, channel, n_bits=8)
 
 # Decode
 dec_audio16 = dec.load_single_binary(dump_fname16)

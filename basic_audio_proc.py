@@ -39,6 +39,17 @@ def quantize(audio, org_dtype, wordlength):
     return quantized
 
 
+def downsample(audio,N,shift=0):
+    dsAudio = audio[shift::N]
+    return dsAudio
+
+
+def upsample(audio, N, shift=0):
+    usAudio = np.zeros(len(audio)*N, dtype=audio.dtype)
+    usAudio[shift::N] = audio
+    return usAudio
+
+
 def read_segment(filename, duration, channel):
     '''
     Reads arbitrary wav file.
@@ -68,6 +79,7 @@ def read_segment(filename, duration, channel):
     mono_norm_segment = normalize(audio_segment[:,channel])
     mono_raw_segment = audio_segment[:, channel]
     return mono_norm_segment, mono_raw_segment, audio.dtype, fs
+
 
 def frame_audio(audio, frame_length):
     '''
@@ -101,7 +113,7 @@ def play_audio(audio, fs):
     p = pyaudio.PyAudio()
 
     datatype = audio.dtype
-    print datatype
+    #print datatype
     if datatype == np.int8:
         width = 1
     elif datatype == np.int16:
@@ -146,7 +158,7 @@ def mapping2barkmat(fs, bin_brk, n_brkbands):
     #Constructing matrix W which has 1's for each Bark subband, and 0's else:
     nfft = bin_brk.shape[0]
     step_brk = 24.0 / n_brkbands
-    
+
     W = np.zeros((n_brkbands, nfft))
     for i in xrange(n_brkbands):
         W[i,:] = (np.floor(bin_brk/step_brk)== i)
