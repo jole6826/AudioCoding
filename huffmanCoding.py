@@ -8,7 +8,7 @@ class HufmannTree(object):
         self.data = data
         self.p = p
 
-def huffmanEncoder(audio,cBook):
+def huffmanEncoder(audio, cBook, n_bits):
     '''huffmannCoding performs huffman coding on 8 bit quantized audio data
     Input:
         audio -     int8 quantized data (maybe in blocks of size 1024 or similar)
@@ -21,12 +21,12 @@ def huffmanEncoder(audio,cBook):
 
     maxVal = float(np.max(audio))
     minVal = float(np.min(audio))
-    min_dtype = float(np.iinfo(np.int8).min)
-    max_dtype = float(np.iinfo(np.int8).max)
+    min_dtype = float(-2**(n_bits-1))
+    max_dtype = float(2**(n_bits-1)-1)
 
 
     if maxVal > max_dtype or minVal < min_dtype:
-        print ("data contains values outside of int8 range")
+        print ("data contains values outside of coding range: {} ... {}".format(min_dtype, max_dtype))
 
     coded = ''
 
@@ -86,16 +86,13 @@ def huffmanDecoder(bitstream, cBook):
     decoded = decoded[:idx_sample]            
     return decoded
 
-def createHuffmanCodebook(audio):
+def createHuffmanCodebook(audio, n_bits):
     # function to create huffman codebook using probabilities of each symbol
-    # p is an array that contains the symbols p[:,0] and probabilities p[:,1]
-    # based on https://gist.github.com/mreid/fdf6353ec39d050e972b
 
-    org_dtype = audio.dtype
-    min_dtype = float(np.iinfo(org_dtype).min)
-    max_dtype = float(np.iinfo(org_dtype).max)
+    min_dtype = float(-2**(n_bits-1))
+    max_dtype = float(2**(n_bits-1)-1)
     nSamples = audio.shape[0]
-    nPossibleVals = int(max_dtype - min_dtype + 1)
+    nPossibleVals = int(2**n_bits)
     hist, __ = np.histogram(audio, nPossibleVals, [min_dtype, max_dtype])
     probs = np.float32(hist) / nSamples
     probs = probs[hist != 0]

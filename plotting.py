@@ -70,7 +70,7 @@ def plot_spectrogram(audio_signals, fs):
             plt.show()          
     elif type(audio_signals).__name__ == 'ndarray': #only one signal to plot
         f_stft_hz, t_stft, Zxx_stft = sig.stft(audio_signals, fs, nperseg=2048, nfft=2048)
-        plt.pcolormesh(t_stft, f_stft_hz, np.abs(Zxx_stft), vmin=0, vmax=max(signal))
+        plt.pcolormesh(t_stft, f_stft_hz, np.abs(Zxx_stft), vmin=0, vmax=max(audio_signals)/20)
         plt.title('STFT Magnitude')
         plt.ylabel('Frequency [Hz]')
         plt.xlabel('Time [sec]')
