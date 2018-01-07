@@ -23,6 +23,22 @@ def createFilterBank(fs, n_bands):
     
     return fb
 
+def create_mdct_filterbank(n_bands):
+    ''' this implements the formula on the seminar slides, but with proper indexing meaning h(L-1-n) is exchanged
+    with h(n) with proper substitution from L-1-n to n, L = 2N
+    '''
+    n = np.arange(2*n_bands) # filters have length n_bands
+    
+    # modulation function to move window over frequency range
+    mod = [np.cos((np.pi/n_bands) * (idx_band+0.5) * (1.5*n_bands-0.5-n)) for idx_band in np.arange(n_bands)]
+    
+    # baseband window function that is moved over frequency range
+    window = np.sin((np.pi/(2*n_bands)) * (2*n_bands-0.5-n))
+    
+    #modulated filterbank
+    fb = mod*window
+    
+    return fb
 
 def apply_filters(audio, filterbank):
     orig_type = audio.dtype
