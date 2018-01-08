@@ -36,7 +36,7 @@ def create_mdct_filterbank(n_bands):
     window = np.sin((np.pi/(2*n_bands)) * (2*n_bands-0.5-n))
     
     #modulated filterbank
-    fb = mod*window
+    fb = mod * window * np.sqrt(2.0/n_bands)
     
     return fb
 
