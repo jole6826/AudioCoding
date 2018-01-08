@@ -16,7 +16,7 @@ length_segment = 8 # in seconds
 plot_audio = True
 plot_psycho = False
 play_audio = True
-play_filterbank = True
+play_filterbank = False
 dump_files = True
 n_bands = 128
 n_brkbands = 48
@@ -32,27 +32,27 @@ if not os.path.exists('bin'):
 Test mdct filterbank with ramp function: expected outcome: only delay of 2*N-1
 '''
 ##########
-mdct_filterbank = fb.create_mdct_filterbank(n_bands)
+mdct_fb_analysis, mdct_fb_synthesis = fb.create_mdct_filterbank(n_bands)
 
 ramp = np.arange(0, np.iinfo(np.int16).max + 1)
 ramp = np.append(np.zeros(fs, dtype=np.int16), ramp)
-ramp = np.append(ramp, np.iinfo(np.int16).max * np.ones(fs, dtype=np.int16))
+ramp = np.append(ramp, np.iinfo(np.int16).max * np.ones(fs, dtype=np.int16)).astype(np.int16)
 
 # decompose into subbands
-ramp_bands = fb.apply_filters(ramp, mdct_filterbank)
-
+ramp_bands = enc.apply_mdct_analysis_filterbank(ramp, mdct_fb_analysis)
+ 
 # downsampling
 ramp_bands_ds = [bap.downsample(band, N=n_bands) for band in ramp_bands]
-
+ 
 # upsampling
 ramp_bands_us = [bap.upsample(band, N=n_bands) for band in ramp_bands_ds]
-
+ 
 # reconstruct original signal
-ramp_reconstructed = dec.applySynthesisFilterBank(ramp_bands_us, mdct_filterbank)
+ramp_reconstructed = dec.apply_mdct_synthesis_filterbank(ramp_bands_us, mdct_fb_synthesis)
 
-f1 = plotting.plot_time(mdct_filterbank[n_bands/2], title='IR of MDCT Band {}'.format(n_bands/2))
-f2 = plotting.plot_spectrum(mdct_filterbank[n_bands/2], title='Frequency Response of MDCT Band {}'.format(n_bands/2))
-#f3 = plotting.plot_filterbank(mdct_filterbank) #only uncomment for small n_bands to get meaningful plot
+f1 = plotting.plot_time(mdct_fb_analysis[n_bands/2], title='IR of MDCT Band {}'.format(n_bands/2))
+f2 = plotting.plot_spectrum(mdct_fb_analysis[n_bands/2], title='Frequency Response of MDCT Band {}'.format(n_bands/2))
+#f3 = plotting.plot_filterbank(mdct_fb_analysis) #only uncomment for small n_bands to get meaningful plot
 f4 = plotting.plot_time([ramp, ramp_reconstructed], title='Reconstruction of MDCT filterbank', 
                         legend_names=['Original Ramp', 'Reconstructed Ramp'])
 
@@ -111,7 +111,7 @@ decompose audio signal into subbands and process each subband individually:
 - each subband has different huffman codes according to histogram
 '''
 # decompose into 4 subbands
-audio_bands = fb.apply_filters(raw_audio, mdct_filterbank)
+audio_bands = enc.apply_mdct_analysis_filterbank(raw_audio, mdct_fb_analysis)
 
 # downsampling
 audio_bands_ds = [bap.downsample(band, N=n_bands) for band in audio_bands]
@@ -158,8 +158,8 @@ huff_audio_bands_us = [bap.upsample(band, N=n_bands) for band in huffman_decoded
 twoscomp_bands_us = [bap.upsample(band, N=n_bands) for band in twoscomp_decoded_bands]
 
 # reconstruct original signal
-huff_reconstructed_audio = dec.applySynthesisFilterBank(huff_audio_bands_us, mdct_filterbank)
-twoscomp_reconstructed_audio = dec.applySynthesisFilterBank(twoscomp_bands_us, mdct_filterbank)
+huff_reconstructed_audio = dec.apply_mdct_synthesis_filterbank(huff_audio_bands_us, mdct_fb_synthesis)
+twoscomp_reconstructed_audio = dec.apply_mdct_synthesis_filterbank(twoscomp_bands_us, mdct_fb_synthesis)
 
 if play_filterbank:
     print 'playing lowpass component'
