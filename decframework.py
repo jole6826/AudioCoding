@@ -49,6 +49,14 @@ def applySynthesisFilterBank(audio_in_bands, filterbank):
 
     return recon_audio
 
+def apply_mdct_synthesis_filterbank(audio_in_bands, mdct_filterbank):
+    orig_dtype = audio_in_bands[0].dtype
+    
+    recon_audio = fb.applyFiltersSynthesis(audio_in_bands, mdct_filterbank)
+    recon_audio = np.array(recon_audio).astype(orig_dtype)
+    
+    return recon_audio
+
 def dec_twoscomp(data_binary, n_bits):
     data = hc.unpack_bytes_to_bits(data_binary)
     

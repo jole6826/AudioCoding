@@ -2,7 +2,6 @@ import scipy.io.wavfile as wv
 import numpy as np
 import pyaudio
 import matplotlib.pyplot as plt
-import bitstring
 
 def normalize(audio):
     # normalizes single channel audio data with maximum value that can be stored in the datatype
@@ -33,6 +32,7 @@ def quantize(audio, org_dtype, wordlength):
 
     stepsize = ((max_dtype/np.abs(min_dtype)) - (min_dtype/np.abs(min_dtype))) / (2**wordlength)
     quantized = np.round(audio/stepsize).astype(np.int)
+    quantized = np.clip(quantized, -2**(wordlength-1), 2**(wordlength-1)-1) #clip to eliminate possible rounding errors
     
     return quantized
 
@@ -47,9 +47,15 @@ def dequantize(quant_indices, wordlength):
 
 def bitdemand_from_masking(masking_threshold, n_scalebands, org_dtype):
     n_vals = len(masking_threshold)
-    min_thresh_in_band = [np.amin(masking_threshold[i*(n_vals/n_scalebands):(i+1)*(n_vals/n_scalebands)])
-                          for i in np.arange(n_scalebands)]
+    subbands_in_scaleband = n_vals/float(n_scalebands)
+    min_thresh_in_band = [None] * n_scalebands
     
+    for i in np.arange(n_scalebands):
+        scaleband_lowerlim = np.floor(i*subbands_in_scaleband).astype(np.int)
+        scaleband_upperlim = np.ceil((i+1)*subbands_in_scaleband).astype(np.int)
+        
+        min_thresh_in_band[i] = np.amin(masking_threshold[scaleband_lowerlim:scaleband_upperlim])
+            
     stepsizes = [thresh * np.sqrt(12) for thresh in min_thresh_in_band]
     
     min_dtype = float(np.iinfo(org_dtype).min)

@@ -22,6 +22,11 @@ def applyAnalysisFilterBank(audio, n_bands, fs):
 
     return audio_in_bands, filterbank
 
+def apply_mdct_analysis_filterbank(audio, mdct_filterbank):
+    audio_in_bands = fb.apply_filters(audio, mdct_filterbank)
+    
+    return audio_in_bands
+    
 def enc_huffman(audio, n_bits):
     cb, cb_tree = hc.createHuffmanCodebook(audio, n_bits)
     data_bits = hc.huffmanEncoder(audio, cb, n_bits)
