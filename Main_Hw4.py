@@ -12,8 +12,8 @@ import numpy as np
 channel = 1 # L = 0, R = 1
 length_segment = 8 # in seconds
 plot_audio = True
-play_audio = True
-dump_files = True
+play_audio = False
+dump_files = False
 n_bands = 4
 sFactor = 4
 n_brkbands = 48
