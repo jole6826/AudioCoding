@@ -23,6 +23,27 @@ def createFilterBank(fs, n_bands):
     
     return fb
 
+def create_mdct_filterbank(n_bands):
+    ''' this implements the formula on the seminar slides, but with proper indexing meaning h(L-1-n) is exchanged
+    with h(n) with proper substitution from L-1-n to n, L = 2N
+    '''
+    n = np.arange(2*n_bands) # filters have length n_bands
+    L = 2.0*n_bands
+    
+    # modulation function to move window over frequency range
+    mod_analysis = [np.cos((np.pi/n_bands) * (idx_band+0.5) * ((L - 1 - n) + 0.5 - 0.5*n_bands)) 
+                    for idx_band in np.arange(n_bands)]
+    mod_synthesis = [-np.cos((np.pi/n_bands) * (idx_band+0.5) * ((L - 1 - n) + 0.5 + 0.5*n_bands)) 
+                     for idx_band in np.arange(n_bands)]
+    
+    # baseband window function that is moved over frequency range
+    window = np.sin((np.pi/(2*n_bands)) * (2*n_bands-0.5-n))
+    
+    #modulated filterbank (factors 0.05 and 20 to avoid clipping)
+    fb_analysis = [0.05 * band * window * np.sqrt(2.0/n_bands) for band in mod_analysis]
+    fb_synthesis = [20 * band * window * np.sqrt(2.0/n_bands) for band in mod_synthesis]
+    
+    return fb_analysis, fb_synthesis
 
 def apply_filters(audio, filterbank):
     orig_type = audio.dtype
@@ -33,7 +54,7 @@ def apply_filters(audio, filterbank):
     
     for idx_band, band_filter in enumerate(filterbank):
         audio_in_bands[idx_band] = signal.lfilter(band_filter, 1, audio)
-        np.clip(audio_in_bands[idx_band], min_dtype, max_dtype)
+        audio_in_bands[idx_band] = np.clip(audio_in_bands[idx_band], min_dtype, max_dtype)
         audio_in_bands[idx_band] = audio_in_bands[idx_band].astype(orig_type)
 
     return audio_in_bands
@@ -49,7 +70,7 @@ def applyFiltersSynthesis(audio_in_bands, filterbank):
     for idx_band, band_filter in enumerate(filterbank):
         reconstructed_audio += signal.lfilter(band_filter, 1, audio_in_bands[idx_band])
         
-    np.clip(reconstructed_audio, min_dtype, max_dtype)
+    reconstructed_audio = np.clip(reconstructed_audio, min_dtype, max_dtype)
     reconstructed_audio = reconstructed_audio.astype(orig_type)
 
     return reconstructed_audio

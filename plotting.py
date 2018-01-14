@@ -8,10 +8,15 @@ def plot_spectrum(audio_signals, title='Spectrum', legend_names=None, legend_pos
     if type(audio_signals).__name__ == 'list': #list of ndarrays, ergo multiple signals to plot
         for signal in audio_signals:
             w, H = sig.freqz(signal)
+            plt.plot(w, 20 * np.log10(abs(H) + 1e-6)) 
+    elif type(audio_signals).__name__ == 'ndarray': 
+        if audio_signals.ndim == 2: #multidimensional ndarray
+            for signal in audio_signals:
+                w, H = sig.freqz(signal)
+                plt.plot(w, 20 * np.log10(abs(H) + 1e-6))             
+        elif audio_signals.ndim == 1: #only one signal to plot
+            w, H = sig.freqz(audio_signals)
             plt.plot(w, 20 * np.log10(abs(H) + 1e-6))
-    elif type(audio_signals).__name__ == 'ndarray': #only one signal to plot
-        w, H = sig.freqz(audio_signals)
-        plt.plot(w, 20 * np.log10(abs(H) + 1e-6))
     else: #error
         raise TypeError('Either pass list of ndarrays or single ndarray. You passed {}.'.format(type(audio_signals).__name__))
         
@@ -30,8 +35,12 @@ def plot_time(audio_signals, title='Time Domain', legend_names=None, legend_pos=
     if type(audio_signals).__name__ == 'list': #list of ndarrays, ergo multiple signals to plot
         for signal in audio_signals:
             plt.plot(signal)
-    elif type(audio_signals).__name__ == 'ndarray': #only one signal to plot
-        plt.plot(audio_signals)
+    elif type(audio_signals).__name__ == 'ndarray': 
+        if audio_signals.ndim == 2: #multidimensional ndarray
+            for signal in audio_signals:
+                plt.plot(signal)
+        elif audio_signals.ndim == 1: #only one signal to plot
+            plt.plot(audio_signals)
     else: #error
         raise TypeError('Either pass list of ndarrays or single ndarray. You passed {}.'.format(type(audio_signals).__name__))
         
@@ -70,7 +79,7 @@ def plot_spectrogram(audio_signals, fs):
             plt.show()          
     elif type(audio_signals).__name__ == 'ndarray': #only one signal to plot
         f_stft_hz, t_stft, Zxx_stft = sig.stft(audio_signals, fs, nperseg=2048, nfft=2048)
-        plt.pcolormesh(t_stft, f_stft_hz, np.abs(Zxx_stft), vmin=0, vmax=max(signal))
+        plt.pcolormesh(t_stft, f_stft_hz, np.abs(Zxx_stft), vmin=0, vmax=max(audio_signals)/20)
         plt.title('STFT Magnitude')
         plt.ylabel('Frequency [Hz]')
         plt.xlabel('Time [sec]')

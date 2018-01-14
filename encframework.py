@@ -22,9 +22,14 @@ def applyAnalysisFilterBank(audio, n_bands, fs):
 
     return audio_in_bands, filterbank
 
-def enc_huffman(audio):
-    cb, cb_tree = hc.createHuffmanCodebook(audio)
-    data_bits = hc.huffmanEncoder(audio, cb)
+def apply_mdct_analysis_filterbank(audio, mdct_filterbank):
+    audio_in_bands = fb.apply_filters(audio, mdct_filterbank)
+    
+    return audio_in_bands
+    
+def enc_huffman(audio, n_bits):
+    cb, cb_tree = hc.createHuffmanCodebook(audio, n_bits)
+    data_bits = hc.huffmanEncoder(audio, cb, n_bits)
 
     n_zero_pad = 8 - ((len(data_bits)+3) % 8)
     if n_zero_pad == 8:
@@ -34,25 +39,52 @@ def enc_huffman(audio):
 
     return cb, cb_tree, data_binstring
 
-def dump_quantized(quantized_audio, dump_fname):
-    if type(quantized_audio).__name__ == 'list': #list of ndarrays, ergo multiple signals to dump
-        with open(os.path.join('bin', dump_fname), 'wb') as f:
-            for band in quantized_audio:
-                pickle.dump(band, f, 1)
-    elif type(quantized_audio).__name__ == 'ndarray': #only one signal to dump
-        pickle.dump(quantized_audio, open(os.path.join('bin', dump_fname), 'wb'), 1)
-    else: #error
-        raise TypeError('Either pass list of ndarrays or single ndarray. You passed {}.'.format(type(quantized_audio).__name__))
+def enc_twos_complement(audio, n_bits):
+# this is just regular coding as pickling of integers would do but enables arbitrary, e.g. 7 or 11 bit coding
+# for which there are no datatypes in numpy/python
+    
+    binsymbols = [decimal_2_twos_complement(sample, n_bits) for sample in audio]
+    coded = ''.join(binsymbols)
+    
+    n_zero_pad = 8 - ((len(coded)+3) % 8)
+    if n_zero_pad == 8:
+        n_zero_pad = 0
+    padded_bits = '{:b}'.format(n_zero_pad).zfill(3) + coded + '{:b}'.format(0).zfill(n_zero_pad)
+    data_binstring = hc.pack_bits_to_bytes(padded_bits)        
+    
+    return data_binstring
 
-def dump_huffman(data_binstring, cb, dump_fname):  
-    if type(data_binstring).__name__ == 'tuple': #list of ndarrays, ergo multiple signals to dump
+def decimal_2_twos_complement(value, n_bits):
+    if (value & (1 << (n_bits-1))) != 0: #check whether value is negative
+        value = (1 << n_bits) + value
+    
+    coded = '{:b}'.format(value).zfill(n_bits)
+    return coded
+    
+def dump_twos_complement(data_binstring, bitdemand, dump_fname):
+    if type(data_binstring).__name__ == 'list': #list of strs, ergo multiple signals to dump
+        with open(os.path.join('bin', dump_fname), 'wb') as f:
+            for idx, band in enumerate(data_binstring):
+                pickle.dump(band, f, 1)
+                pickle.dump(bitdemand[idx], f, 1)
+    elif type(data_binstring).__name__ == 'str': #only one signal to dump
+        with open(os.path.join('bin', dump_fname), 'wb') as f:
+            pickle.dump(data_binstring, f, 1)
+            pickle.dump(bitdemand, f, 1)
+    else: #error
+        raise TypeError('Either pass list of strs or single str. You passed {}.'.format(type(data_binstring).__name__))
+
+def dump_huffman(data_binstring, cb, bitdemand, dump_fname):  
+    if type(data_binstring).__name__ == 'tuple': #list of strs, ergo multiple signals to dump
         with open(os.path.join('bin', dump_fname), 'wb') as f:
             for idx_band, binstring_band in enumerate(data_binstring):
                 pickle.dump(cb[idx_band], f, 1)
                 pickle.dump(binstring_band, f, 1)
+                pickle.dump(bitdemand[idx_band], f, 1)
     elif type(data_binstring).__name__ == 'str': #only one signal to dump
         with open(os.path.join('bin', dump_fname), 'wb') as f:
             pickle.dump(cb, f, 1)
             pickle.dump(data_binstring, f, 1) 
+            pickle.dump(bitdemand, f, 1)
     else: #error
         raise TypeError('Either pass tuple (list) of strs or single str. You passed {}.'.format(type(data_binstring).__name__)) 

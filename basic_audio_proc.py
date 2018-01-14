@@ -17,7 +17,8 @@ def normalize(audio):
 
 def quantize(audio, org_dtype, wordlength):
     '''
-    quantizes single channel audio data to 16 bit
+    quantizes single channel normalized (-1...0.99xx) audio data
+    returns quantization indices
 
     depending on the datatype of the original wav, the prior normalization by the maximum value of
     the datatype will result in a different maximum number that has to be taken into account for calculating
@@ -30,14 +31,38 @@ def quantize(audio, org_dtype, wordlength):
     max_dtype = float(np.iinfo(org_dtype).max)
 
     stepsize = ((max_dtype/np.abs(min_dtype)) - (min_dtype/np.abs(min_dtype))) / (2**wordlength)
-    quantized = np.round(audio/stepsize)
-
-    output_datatypes = {8: np.int8,
-                        16: np.int16,
-                        32: np.int32}
-    quantized = quantized.astype(output_datatypes[wordlength])
+    quantized = np.round(audio/stepsize).astype(np.int)
+    quantized = np.clip(quantized, -2**(wordlength-1), 2**(wordlength-1)-1) #clip to eliminate possible rounding errors
+    
     return quantized
 
+def dequantize(quant_indices, wordlength):
+    '''
+    dequantizes quant_indices back to 16 bit data
+    '''
+    stepsize = (-np.iinfo(np.int16).min) / (2**(wordlength-1))
+    audio = (quant_indices * stepsize).astype(np.int16)
+    return audio
+    
+
+def bitdemand_from_masking(masking_threshold, n_scalebands, org_dtype):
+    n_vals = len(masking_threshold)
+    subbands_in_scaleband = n_vals/float(n_scalebands)
+    min_thresh_in_band = [None] * n_scalebands
+    
+    for i in np.arange(n_scalebands):
+        scaleband_lowerlim = np.floor(i*subbands_in_scaleband).astype(np.int)
+        scaleband_upperlim = np.ceil((i+1)*subbands_in_scaleband).astype(np.int)
+        
+        min_thresh_in_band[i] = np.amin(masking_threshold[scaleband_lowerlim:scaleband_upperlim])
+            
+    stepsizes = [thresh * np.sqrt(12) for thresh in min_thresh_in_band]
+    
+    min_dtype = float(np.iinfo(org_dtype).min)
+    max_dtype = float(np.iinfo(org_dtype).max)
+    bitdemand = [np.ceil(np.log2((max_dtype - min_dtype) / delta)).astype(np.int8) for delta in stepsizes]
+    return bitdemand
+   
 
 def downsample(audio,N,shift=0):
     dsAudio = audio[shift::N]
