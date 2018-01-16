@@ -21,9 +21,10 @@ def huffmanEncoder(audio, cBook, n_bits):
 
     maxVal = float(np.max(audio))
     minVal = float(np.min(audio))
-    min_dtype = float(-2**(n_bits-1))
-    max_dtype = float(2**(n_bits-1)-1)
-
+    min_dtype = float(-2**(float(n_bits)-1))
+    max_dtype = float(2**(float(n_bits)-1)-1)
+    if n_bits == 0:
+        max_dtype = 0.5
 
     if maxVal > max_dtype or minVal < min_dtype:
         print ("data contains values outside of coding range: {} ... {}".format(min_dtype, max_dtype))
@@ -89,8 +90,8 @@ def huffmanDecoder(bitstream, cBook):
 def createHuffmanCodebook(audio, n_bits):
     # function to create huffman codebook using probabilities of each symbol
 
-    min_dtype = float(-2**(n_bits-1))
-    max_dtype = float(2**(n_bits-1)-1)
+    min_dtype = float(-2**(float(n_bits)-1))
+    max_dtype = float(2**(float(n_bits)-1)-1)
     nSamples = audio.shape[0]
     nPossibleVals = int(2**n_bits)
     hist, __ = np.histogram(audio, nPossibleVals, [min_dtype, max_dtype])

@@ -30,7 +30,7 @@ f.append('castanets_16.wav')
 f.append('speech_16.wav')
 
 # read in audio files
-file= f[1]
+file= f[2]
 base = basename(file)
 name = os.path.splitext(base)[0]
 
