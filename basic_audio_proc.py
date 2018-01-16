@@ -74,6 +74,16 @@ def upsample(audio, N, shift=0):
     usAudio[shift::N] = audio
     return usAudio
 
+def getAudioDimensions(audio):
+    audioShape = audio.shape
+    if len(audioShape) > 1:
+        nSamples = audioShape[0]
+        nChannels = audioShape[1]
+    else:
+        nSamples = audioShape[0]
+        nChannels = 1
+    return nSamples, nChannels
+
 
 def read_segment(filename, duration, channel):
     '''
@@ -84,7 +94,7 @@ def read_segment(filename, duration, channel):
     4 = rear left, 5 = rear right)
     '''
     [fs, audio] = wv.read(filename)
-    [n_samples, _] = audio.shape
+    [n_samples, n_channels] = getAudioDimensions(audio)
 
     samples_segment = duration * fs # conversion from seconds to samples
 
@@ -98,11 +108,19 @@ def read_segment(filename, duration, channel):
         start_segment = 0
         end_segment = n_samples
 
-    audio_segment = audio[start_segment:end_segment, :]
+    if n_channels > 1:
+        audio_segment = audio[start_segment:end_segment, :]
 
-    # different maximum for each channel
-    mono_norm_segment = normalize(audio_segment[:,channel])
-    mono_raw_segment = audio_segment[:, channel]
+        # different maximum for each channel
+        mono_norm_segment = normalize(audio_segment[:,channel])
+        mono_raw_segment = audio_segment[:, channel]
+    else:
+        audio_segment = audio[start_segment:end_segment]
+
+        # different maximum for each channel
+        mono_norm_segment = normalize(audio_segment[:])
+        mono_raw_segment = audio_segment[:]
+
     return mono_norm_segment, mono_raw_segment, audio.dtype, fs
 
 
