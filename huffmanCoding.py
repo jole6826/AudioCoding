@@ -66,7 +66,8 @@ def fastHuffmanDecoder(bitstream, cb_tree):
   
 def huffmanDecoder(bitstream, cBook):
     inv_cBook = {bit_code: value for value, bit_code in cBook.iteritems()}
-    nSamples_max = len(bitstream) / min([len(key) for key in inv_cBook.keys()]) + 1
+    minCodeLength = min([len(key) for key in inv_cBook.keys()])
+    nSamples_max = len(bitstream) / minCodeLength + 1
     decoded = np.zeros(nSamples_max)
     
     idx_sample = 0
@@ -90,6 +91,7 @@ def huffmanDecoder(bitstream, cBook):
 def createHuffmanCodebook(audio, n_bits):
     # function to create huffman codebook using probabilities of each symbol
 
+
     min_dtype = float(-2**(float(n_bits)-1))
     max_dtype = float(2**(float(n_bits)-1)-1)
     nSamples = audio.shape[0]
@@ -101,8 +103,12 @@ def createHuffmanCodebook(audio, n_bits):
     
     init_tree = [HufmannTree(None, None, value, probs[idx]) for idx, value in enumerate(vals)]
 
-    codebook_tree = build_huffman_tree(init_tree)
-    codebook = tree2codebook(codebook_tree, '')
+    if len(init_tree) == 1 and len(vals) == 1: # this is needed to avoid problems when there is only zeros in the audio band
+        codebook_tree = build_huffman_tree(init_tree)
+        codebook = dict({str(vals[0]): '1'})
+    else:
+        codebook_tree = build_huffman_tree(init_tree)
+        codebook = tree2codebook(codebook_tree, '')
     return codebook, codebook_tree
 
 def build_huffman_tree(init_tree):
@@ -121,7 +127,7 @@ def tree2codebook(huffman_tree, current_code):
         cb.update(cb_right)
         return cb
     else:
-        return dict({str(huffman_tree.data): current_code})   
+        return dict({str(huffman_tree.data): current_code})
    
 def createHuffmanCodebookFromHist(hist,vals):
     # function to create huffman codebook using probabilities of each symbol

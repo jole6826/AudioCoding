@@ -20,6 +20,8 @@ play_audio = True
 play_filterbank = False
 dump_files = True
 n_bands = 128
+aNLS = 0.6 # alpha for nonlinear superposition (was at 0.3)
+aSF = 1.0 # alpha for spreading function (was 1.0)  1 for tonal, 0 for noiselike
 n_brkbands = 48
 fs = 44100
 
@@ -28,6 +30,11 @@ audioFolder = 'audio'
 f = ['rockyou_16.wav']
 f.append('castanets_16.wav')
 f.append('speech_16.wav')
+settings = '_128bands_aNLS_0.6'
+
+# Handle folder structure
+if not os.path.exists('bin'):
+    os.makedirs('bin')
 
 # read in audio files
 file= f[2]
@@ -61,8 +68,8 @@ power_stft = np.square(np.abs(Zxx_stft))
 power_in_brk_band = np.dot(W, power_stft)
 spl_in_brk_band = 10 * np.log10(power_in_brk_band)
 
-spreadingfunc_brk = bap.calc_spreadingfunc_brk(1, spl_in_brk_band, plot=plot_psycho)
-maskingthresh = bap.nonlinear_superposition(spreadingfunc_brk[100,:,:], alpha=0.3)
+spreadingfunc_brk = bap.calc_spreadingfunc_brk(aSF, spl_in_brk_band, plot=plot_psycho)
+maskingthresh = bap.nonlinear_superposition(spreadingfunc_brk[100,:,:], alpha=aNLS)
 
 brk_bandwise_axis = np.linspace(0, (n_brkbands-1)/2.0, n_brkbands)
 hz_bandwise_axis = bap.bark2hz(brk_bandwise_axis)
@@ -104,13 +111,44 @@ cb_bands, cb_tree_bands, huff_data_binstring_bands = zip(*(enc.enc_huffman(quant
                                                       for idx, quantized_audio in enumerate(quantized_audio_bands_ds)))
 
 if dump_files:
-    enc.dump_twos_complement(twoscomp_data_binstring_bands, bitdemand, name + '_encoded_bands.bin')
-    enc.dump_huffman(huff_data_binstring_bands, cb_bands, bitdemand, name + '_encoded_huffman_bands.bin')
+    enc.dump_twos_complement(twoscomp_data_binstring_bands, bitdemand, name + settings + '_encoded_bands.bin')
+    enc.dump_huffman(huff_data_binstring_bands, cb_bands, bitdemand, name+ settings + '_encoded_huffman_bands.bin')
 
 
 
 if dump_files:
-    enc.dump_twos_complement(twoscomp8_data_binstring, 8, name + '_encoded_8bit.bin')
-    enc.dump_twos_complement(twoscomp16_data_binstring, 16, name + '_encoded_16bit.bin')
+    enc.dump_twos_complement(twoscomp8_data_binstring, 8, name + settings + '_encoded_8bit.bin')
+    enc.dump_twos_complement(twoscomp16_data_binstring, 16, name + settings + '_encoded_16bit.bin')
 
 
+'''
+Decode & Synthesize again
+'''
+# Decode and Dequantize
+twoscomp_bin_decoded_bands, twoscomp_n_bits = dec.load_twoscomp_binary_bandwise(name + settings + '_encoded_bands.bin', n_bands)
+twoscomp_decoded_bands = [dec.dec_twoscomp(band, twoscomp_n_bits[idx])
+                          for idx, band in enumerate(twoscomp_bin_decoded_bands)]
+twoscomp_decoded_bands = [dec.dequantize(band, twoscomp_n_bits[idx])
+                          for idx, band in enumerate(twoscomp_decoded_bands)]
+
+huffman_bin_decoded_bands, cb_decoded_bands, huffman_n_bits = dec.load_huffman_binary_bandwise(name + settings + '_encoded_huffman_bands.bin', n_bands)
+huffman_decoded_bands = [dec.dec_huffman(band, cb_decoded_bands[idx_band])
+                         for idx_band, band in enumerate(huffman_bin_decoded_bands)]
+
+huffman_decoded_bands = [dec.dequantize(band, huffman_n_bits[idx])
+                         for idx, band in enumerate(huffman_decoded_bands)]
+
+# upsampling
+huff_audio_bands_us = [bap.upsample(band, N=n_bands) for band in huffman_decoded_bands]
+twoscomp_bands_us = [bap.upsample(band, N=n_bands) for band in twoscomp_decoded_bands]
+
+# reconstruct original signal
+huff_reconstructed_audio = dec.apply_mdct_synthesis_filterbank(huff_audio_bands_us, mdct_fb_synthesis)
+twoscomp_reconstructed_audio = dec.apply_mdct_synthesis_filterbank(twoscomp_bands_us, mdct_fb_synthesis)
+
+
+if play_audio:
+    print 'Play Original audio'
+    bap.play_audio(raw_audio, fs)
+    print 'Play reconstructed (variable bit demand in bands) decoded audio'
+    bap.play_audio(huff_reconstructed_audio, fs)
