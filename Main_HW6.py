@@ -36,6 +36,8 @@ settings = '_128bands_aNLS_0.6'
 if not os.path.exists('bin'):
     os.makedirs('bin')
 
+# das hier ist ja völliger Unsinn
+
 # read in audio files
 file= f[2]
 base = basename(file)
