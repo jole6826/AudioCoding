@@ -8,6 +8,8 @@ def pad_zeros_to_blocklength(data, blocklength):
     
     if mod_blocklength != 0:
         padded = np.append(data, np.zeros(blocklength-mod_blocklength, dtype=data.dtype))
+    else:
+        padded = data
         
     return padded
 
