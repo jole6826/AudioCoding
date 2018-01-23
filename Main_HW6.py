@@ -8,6 +8,7 @@ import numpy as np
 import filterBanks as fb
 import os
 from os.path import basename
+import time
 
 ########################################
 # Adjust here before running the script#
@@ -19,15 +20,10 @@ plot_psycho = False
 play_audio = True
 play_filterbank = False
 dump_files = True
-
-# Parameters to change and evaluate
-n_bands = 128
-aNLS = 0.3 # alpha for nonlinear superposition (was at 0.3)
-aSF = 1.0 # alpha for spreading function (was 1.0)  1 for tonal, 0 for noiselike
+n_bands = 128 # was at 128
+aNLS = 0.6 # alpha for nonlinear superposition (was at 0.3)
+aSF = 0.0 # alpha for spreading function (was 1.0)  1 for tonal, 0 for noiselike
 n_brkbands = 48
-
-settings = '_'+str(n_bands)+'bands_aSF_'+str(aSF)# +'_offset_18.5_'
-
 fs = 44100
 
 # define audio files in a list
@@ -36,21 +32,21 @@ f = ['rockyou_16.wav']
 f.append('castanets_16.wav')
 f.append('speech_16.wav')
 f.append('imagine_Dragons_Thunder_short_32khz.wav')
-settings = '_128bands_aNLS_0.6'
+settings = '_{}bands_aNLS_{}_aTon_{}'.format(n_bands, aNLS, aSF)
 
 # Handle folder structure
 if not os.path.exists('bin'):
     os.makedirs('bin')
 
-# das hier ist ja völliger Unsinn
-
 # read in audio files
-file= f[3]
+file= f[1]
 base = basename(file)
 name = os.path.splitext(base)[0]
 
 #raw_audio, norm_audio, org_dtype, fs = enc.read_segment('imagine_Dragons_Thunder_short_32khz.wav', length_segment, channel)
 raw_audio, norm_audio, org_dtype, fs = enc.read_segment(os.path.join(audioFolder,file), length_segment, channel)
+raw_audio = bap.pad_zeros_to_blocklength(raw_audio, n_bands)
+norm_audio = bap.pad_zeros_to_blocklength(norm_audio, n_bands)
 
 
 '''
@@ -61,6 +57,8 @@ twoscomp8_data_binstring = enc.enc_twos_complement(quantized8_audio, 8)
 quantized16_audio = enc.quantize(norm_audio, org_dtype, 16).astype(np.int16)
 twoscomp16_data_binstring = enc.enc_twos_complement(quantized16_audio, 16)
 
+
+start_time = time.time()
 
 '''
 Build Pychoacoustic model with whole audio signal, see block diagram lecture 7: p10
@@ -154,12 +152,34 @@ twoscomp_bands_us = [bap.upsample(band, N=n_bands) for band in twoscomp_decoded_
 huff_reconstructed_audio = dec.apply_mdct_synthesis_filterbank(huff_audio_bands_us, mdct_fb_synthesis)
 twoscomp_reconstructed_audio = dec.apply_mdct_synthesis_filterbank(twoscomp_bands_us, mdct_fb_synthesis)
 
-SNR = bap.snr(huff_reconstructed_audio,raw_audio,n_bands)
+print ("Time for encoding and decoding: {}".format(time.time() - start_time))
 
+audio_fb_without_quant = enc.apply_mdct_analysis_filterbank(raw_audio, mdct_fb_analysis)
+audio_fb_without_quant = [bap.downsample(band, N=n_bands) for band in audio_fb_without_quant]
+audio_fb_without_quant = [bap.upsample(band, N=n_bands) for band in audio_fb_without_quant]
+audio_fb_without_quant = dec.apply_mdct_synthesis_filterbank(audio_fb_without_quant, mdct_fb_synthesis)
+
+noise = audio_fb_without_quant - huff_reconstructed_audio
+noise_power = np.sum(np.square(noise).astype(np.float) / len(noise))
+signal_power = np.sum(np.square(audio_fb_without_quant).astype(np.float) / len(audio_fb_without_quant))
+snr = 10 * np.log10(signal_power / noise_power)
+
+f4 = plotting.plot_time([audio_fb_without_quant, huff_reconstructed_audio], title='Reconstruction of MDCT filterbank', 
+ 
+                        legend_names=['Original', 'Reconstructed'])
+axislimits = plt.ylim()
+plt.show()
+
+f3 = plotting.plot_time(noise, title='Noise')
+plt.ylim(axislimits)
+plt.show()
+
+print ("Signal to noise ratio: {} dB".format(snr))
 
 if play_audio:
     print 'Play Original audio'
     bap.play_audio(raw_audio, fs)
     print 'Play reconstructed (variable bit demand in bands) decoded audio'
-    print('SNR = ' + str(SNR))
     bap.play_audio(huff_reconstructed_audio, fs)
+    print 'Play quantization noise'
+    bap.play_audio(noise, fs)

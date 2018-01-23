@@ -3,6 +3,14 @@ import numpy as np
 import pyaudio
 import matplotlib.pyplot as plt
 
+def pad_zeros_to_blocklength(data, blocklength):
+    mod_blocklength = len(data) % blocklength
+    
+    if mod_blocklength != 0:
+        padded = np.append(data, np.zeros(blocklength-mod_blocklength, dtype=data.dtype))
+        
+    return padded
+
 def normalize(audio):
     # normalizes single channel audio data with maximum value that can be stored in the datatype
 
@@ -64,7 +72,10 @@ def bitdemand_from_masking(masking_threshold, n_scalebands, org_dtype):
     min_dtype = float(np.iinfo(org_dtype).min)
     max_dtype = float(np.iinfo(org_dtype).max)
     bitdemand = [np.ceil(np.log2((max_dtype - min_dtype) / delta)).astype(np.int8) for delta in stepsizes]
-    return np.maximum(bitdemand,np.ones(len(bitdemand))).astype(np.int8) # to make sure no '0' bit demand is used
+    
+    bitdemand = np.maximum(bitdemand,np.ones(len(bitdemand))).astype(np.int8) # to make sure no '0' bit demand is used
+    bitdemand = np.minimum(bitdemand, 16*np.ones(len(bitdemand))).astype(np.int8) # to make sure not more than 16 bit as this would be data not even available in original wav
+    return bitdemand
    
 
 def downsample(audio,N,shift=0):
@@ -152,18 +163,6 @@ def generateSinSignal(amps,freqs,d,fs):
     return s
 
 
-def snr(data, ref, n):
-
-    data = data[2*n-1::].astype(np.float)
-    ref = ref[:len(data):].astype(np.float)
-
-    noise = (ref-data)**2
-    Pn = np.mean(noise)
-    Ps = np.mean(data**2)
-
-    return 10*np.log10(Ps/Pn)
-
-
 def play_audio(audio, fs):
     '''
     plays single channel audio data
@@ -239,8 +238,6 @@ def calc_spreadingfunc_brk(alpha, spl_in_brk_band, plot):
         band_center_hz =  band_lower_frqz_hz + (band_upper_frqz_hz - band_lower_frqz_hz)*0.5
         
         O_f = alpha*(14.5 + idx_brk_band) + (1-alpha)*5.5  # Simultaneous masking for tones at Bark band 12
-        # O_f = alpha*(18.5 + idx_brk_band) + (1-alpha)*5.5  # Simultaneous masking for tones at Bark band 12
-
         slope_up = +27.0 * np.ones(n_segments)  # rising slope of spreading func
         slope_down = -(24.0 + 0.23*np.power(band_center_hz/1000, -1) - 0.2*val_spl_brk)  # Lower slope of spreading function
                 
