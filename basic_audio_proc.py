@@ -57,8 +57,9 @@ def bitdemand_from_masking(masking_threshold, n_scalebands, org_dtype):
         scaleband_upperlim = np.ceil((i+1)*subbands_in_scaleband).astype(np.int)
         
         min_thresh_in_band[i] = np.amin(masking_threshold[scaleband_lowerlim:scaleband_upperlim])
-            
-    stepsizes = [thresh * np.sqrt(12) for thresh in min_thresh_in_band]
+    
+    helpervar = [np.square(thresh) for thresh in min_thresh_in_band] 
+    stepsizes = [np.sqrt(thresh * 12) for thresh in helpervar]
     
     min_dtype = float(np.iinfo(org_dtype).min)
     max_dtype = float(np.iinfo(org_dtype).max)

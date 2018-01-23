@@ -30,16 +30,15 @@ audioFolder = 'audio'
 f = ['rockyou_16.wav']
 f.append('castanets_16.wav')
 f.append('speech_16.wav')
+f.append('imagine_Dragons_Thunder_short_32khz.wav')
 settings = '_128bands_aNLS_0.6'
 
 # Handle folder structure
 if not os.path.exists('bin'):
     os.makedirs('bin')
 
-# das hier ist ja völliger Unsinn
-
 # read in audio files
-file= f[2]
+file= f[3]
 base = basename(file)
 name = os.path.splitext(base)[0]
 
@@ -90,7 +89,7 @@ decompose audio signal into subbands and process each subband individually:
 - each subband has different quant stepsize according to psychoacoustic model
 - each subband has different huffman codes according to histogram
 '''
-# decompose into 4 subbands
+# decompose into subbands
 audio_bands = enc.apply_mdct_analysis_filterbank(raw_audio, mdct_fb_analysis)
 
 # downsampling
