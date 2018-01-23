@@ -21,8 +21,8 @@ play_audio = True
 play_filterbank = False
 dump_files = True
 n_bands = 128 # was at 128
-aNLS = 0.6 # alpha for nonlinear superposition (was at 0.3)
-aSF = 0.0 # alpha for spreading function (was 1.0)  1 for tonal, 0 for noiselike
+aNLS = 0.3 # alpha for nonlinear superposition (was at 0.3)
+aSF = 1.0 # alpha for spreading function (was 1.0)  1 for tonal, 0 for noiselike
 n_brkbands = 48
 fs = 44100
 
@@ -39,7 +39,7 @@ if not os.path.exists('bin'):
     os.makedirs('bin')
 
 # read in audio files
-file= f[1]
+file= f[0]
 base = basename(file)
 name = os.path.splitext(base)[0]
 
@@ -126,6 +126,10 @@ if dump_files:
     enc.dump_twos_complement(twoscomp8_data_binstring, 8, name + settings + '_encoded_8bit.bin')
     enc.dump_twos_complement(twoscomp16_data_binstring, 16, name + settings + '_encoded_16bit.bin')
 
+
+size_original = os.stat(os.path.join('bin', (name + settings + '_encoded_16bit.bin'))).st_size
+size_encoded = os.stat(os.path.join('bin', (name + settings + '_encoded_huffman_bands.bin'))).st_size
+print("Encoded file is {}% of original file size.".format(100 * size_encoded / float(size_original)))
 
 '''
 Decode & Synthesize again
