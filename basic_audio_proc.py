@@ -151,6 +151,18 @@ def generateSinSignal(amps,freqs,d,fs):
     return s
 
 
+def snr(data, ref, n):
+
+    data = data[2*n-1::].astype(np.float)
+    ref = ref[:len(data):].astype(np.float)
+
+    noise = (ref-data)**2
+    Pn = np.mean(noise)
+    Ps = np.mean(data**2)
+
+    return 10*np.log10(Ps/Pn)
+
+
 def play_audio(audio, fs):
     '''
     plays single channel audio data
@@ -226,6 +238,8 @@ def calc_spreadingfunc_brk(alpha, spl_in_brk_band, plot):
         band_center_hz =  band_lower_frqz_hz + (band_upper_frqz_hz - band_lower_frqz_hz)*0.5
         
         O_f = alpha*(14.5 + idx_brk_band) + (1-alpha)*5.5  # Simultaneous masking for tones at Bark band 12
+        # O_f = alpha*(18.5 + idx_brk_band) + (1-alpha)*5.5  # Simultaneous masking for tones at Bark band 12
+
         slope_up = +27.0 * np.ones(n_segments)  # rising slope of spreading func
         slope_down = -(24.0 + 0.23*np.power(band_center_hz/1000, -1) - 0.2*val_spl_brk)  # Lower slope of spreading function
                 

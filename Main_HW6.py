@@ -19,10 +19,15 @@ plot_psycho = False
 play_audio = True
 play_filterbank = False
 dump_files = True
+
+# Parameters to change and evaluate
 n_bands = 128
-aNLS = 0.6 # alpha for nonlinear superposition (was at 0.3)
+aNLS = 0.3 # alpha for nonlinear superposition (was at 0.3)
 aSF = 1.0 # alpha for spreading function (was 1.0)  1 for tonal, 0 for noiselike
 n_brkbands = 48
+
+settings = '_'+str(n_bands)+'bands_aSF_'+str(aSF)# +'_offset_18.5_'
+
 fs = 44100
 
 # define audio files in a list
@@ -30,14 +35,14 @@ audioFolder = 'audio'
 f = ['rockyou_16.wav']
 f.append('castanets_16.wav')
 f.append('speech_16.wav')
-settings = '_128bands_aNLS_0.6'
+
 
 # Handle folder structure
 if not os.path.exists('bin'):
     os.makedirs('bin')
 
 # read in audio files
-file= f[2]
+file= f[0]
 base = basename(file)
 name = os.path.splitext(base)[0]
 
@@ -146,9 +151,12 @@ twoscomp_bands_us = [bap.upsample(band, N=n_bands) for band in twoscomp_decoded_
 huff_reconstructed_audio = dec.apply_mdct_synthesis_filterbank(huff_audio_bands_us, mdct_fb_synthesis)
 twoscomp_reconstructed_audio = dec.apply_mdct_synthesis_filterbank(twoscomp_bands_us, mdct_fb_synthesis)
 
+SNR = bap.snr(huff_reconstructed_audio,raw_audio,n_bands)
+
 
 if play_audio:
     print 'Play Original audio'
     bap.play_audio(raw_audio, fs)
     print 'Play reconstructed (variable bit demand in bands) decoded audio'
+    print('SNR = ' + str(SNR))
     bap.play_audio(huff_reconstructed_audio, fs)
