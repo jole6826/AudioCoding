@@ -41,6 +41,8 @@ f.append('speech_16.wav')
 if not os.path.exists('bin'):
     os.makedirs('bin')
 
+# das hier ist ja völliger Unsinn
+
 # read in audio files
 file= f[0]
 base = basename(file)
